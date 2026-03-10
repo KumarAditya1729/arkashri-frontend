@@ -26,21 +26,39 @@ function buildHeaders(extra: Record<string, string> = {}): Record<string, string
     }
 }
 
-async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
+// ── Retry helper ─────────────────────────────────────────────────────────────
+const RETRY_DELAYS_MS = [500, 1000, 2000] // 3 attempts, exponential backoff
+
+async function apiFetch<T>(path: string, init?: RequestInit, _attempt = 0): Promise<T> {
     const isFormData = init?.body instanceof FormData
     const h = isFormData
         ? { 'X-Arkashri-Tenant': TENANT }
         : buildHeaders()
-    const res = await fetch(`${BASE_URL}${path}`, {
-        ...init,
-        headers: { ...h, ...(init?.headers as Record<string, string> | undefined ?? {}) },
-    })
-    if (!res.ok) {
-        const text = await res.text().catch(() => res.statusText)
-        throw new ApiError(res.status, text)
+    try {
+        const res = await fetch(`${BASE_URL}${path}`, {
+            ...init,
+            headers: { ...h, ...(init?.headers as Record<string, string> | undefined ?? {}) },
+        })
+        if (!res.ok) {
+            const text = await res.text().catch(() => res.statusText)
+            // Only retry on server errors (5xx), not client errors (4xx)
+            if (res.status >= 500 && _attempt < RETRY_DELAYS_MS.length) {
+                await new Promise(r => setTimeout(r, RETRY_DELAYS_MS[_attempt]))
+                return apiFetch<T>(path, init, _attempt + 1)
+            }
+            throw new ApiError(res.status, text)
+        }
+        if (res.status === 204) return undefined as T
+        return res.json() as Promise<T>
+    } catch (err) {
+        if (err instanceof ApiError) throw err
+        // Network error — retry with backoff
+        if (_attempt < RETRY_DELAYS_MS.length) {
+            await new Promise(r => setTimeout(r, RETRY_DELAYS_MS[_attempt]))
+            return apiFetch<T>(path, init, _attempt + 1)
+        }
+        throw err
     }
-    if (res.status === 204) return undefined as T
-    return res.json() as Promise<T>
 }
 
 export class ApiError extends Error {
