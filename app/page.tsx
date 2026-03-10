@@ -1,8 +1,10 @@
+'use client'
+
 import { useEffect, useState } from 'react'
 
 export default function Home() {
   const [message, setMessage] = useState('Loading...')
-  
+
   useEffect(() => {
     // Test API connection
     fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://arkashri-production.up.railway.app'}/`)
@@ -15,9 +17,9 @@ export default function Home() {
     <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
       <h1>🎉 Arkashri Audit OS</h1>
       <h2>Enterprise Audit Platform</h2>
-      <div style={{ 
-        background: '#f0f9ff', 
-        padding: '20px', 
+      <div style={{
+        background: '#f0f9ff',
+        padding: '20px',
         borderRadius: '8px',
         marginTop: '20px'
       }}>
