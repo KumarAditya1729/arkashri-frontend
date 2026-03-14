@@ -93,7 +93,10 @@ export default function EngagementOverviewPage() {
         setCreating(true)
         setCreateError('')
         try {
-            await createEngagement(form)
+            // Map human-readable 'Financial Audit' to 'FINANCIAL_AUDIT' enum
+            const formattedType = form.engagement_type.toUpperCase().replace(/\s+/g, '_')
+            await createEngagement({ ...form, engagement_type: formattedType })
+            
             setShowModal(false)
             setForm({ client_name: '', engagement_type: 'Financial Audit', jurisdiction: 'IN', tenant_id: 'default_tenant' })
             loadEngagements()
