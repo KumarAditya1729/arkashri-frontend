@@ -118,14 +118,24 @@ export default function Dashboard() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 relative">
-                        {!automationData && (
+                        {!automationData ? (
+                            // True offline: backend unreachable
                             <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] rounded-2xl z-10 flex items-center justify-center">
                                 <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-lg border border-red-100 shadow-xl flex items-center gap-2">
                                     <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                                     <span className="text-[10px] font-black text-red-600 uppercase tracking-widest">Decision Engine Offline — Showing Stale Model</span>
                                 </div>
                             </div>
-                        )}
+                        ) : !isLiveScore ? (
+                            // Online but no audit data yet — show a softer info badge
+                            <div className="absolute top-3 right-3 z-10">
+                                <div className="bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-blue-100 shadow-md flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-blue-400" />
+                                    <span className="text-[10px] font-semibold text-blue-600 uppercase tracking-wide">Baseline Model · No Engagements Yet</span>
+                                </div>
+                            </div>
+                        ) : null}
+
                         <AutomationScoreWidget
                             score={automationData?.overall_score ?? 93.4}
                             grade={automationData?.grade ?? 'A'}
