@@ -606,3 +606,53 @@ export async function addTeamMember(engagementId: string, payload: TeamMemberCre
     })
 }
 
+// ─── Controls Types & API ─────────────────────────────────────────────────────
+
+export type ControlStatus = 'NOT_TESTED' | 'EFFECTIVE' | 'DEFICIENT' | 'COMPENSATING'
+export type ControlType = 'PREVENTIVE' | 'DETECTIVE' | 'CORRECTIVE'
+
+export interface ControlOut {
+    id: string
+    engagement_id: string
+    risk_id: string | null
+    title: string
+    area: string
+    control_type: ControlType
+    frequency: string | null
+    owner: string | null
+    status: ControlStatus
+    last_tested: string | null
+}
+
+export interface ControlCreate {
+    title: string
+    area: string
+    control_type: ControlType
+    frequency?: string
+    owner?: string
+    risk_id?: string
+}
+
+export interface ControlStatusUpdate {
+    status: ControlStatus
+}
+
+export async function listControls(engagementId: string): Promise<ControlOut[]> {
+    try {
+        return await apiFetch<ControlOut[]>(`/api/v1/controls/engagements/${engagementId}/controls`)
+    } catch { return [] }
+}
+
+export async function createControl(engagementId: string, payload: ControlCreate): Promise<ControlOut> {
+    return apiFetch<ControlOut>(`/api/v1/controls/engagements/${engagementId}/controls`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    })
+}
+
+export async function updateControlStatus(engagementId: string, controlId: string, payload: ControlStatusUpdate): Promise<ControlOut> {
+    return apiFetch<ControlOut>(`/api/v1/controls/engagements/${engagementId}/controls/${controlId}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+    })
+}

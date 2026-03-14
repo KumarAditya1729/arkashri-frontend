@@ -1,23 +1,19 @@
 'use client'
 
 import { AuditShell } from '@/components/layout/AuditShell'
-import { useState, useEffect, useTransition } from 'react'
-import { Plus, AlertTriangle, ShieldAlert, Filter, ArrowUpDown, ChevronRight, CheckCircle2, Loader2, RefreshCw } from 'lucide-react'
-import { getRisks, createRisk, updateRiskStatus, RiskResponse, RiskLikelihood, RiskImpact, RiskStatus } from '@/lib/api'
-import { ENGAGEMENT_REGISTRY } from '@/lib/engagementRegistry'
+import { useState, useEffect } from 'react'
+import { Plus, AlertTriangle, ShieldAlert, Filter, ArrowUpDown, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react'
+import {
+    getRisks, createRisk, RiskResponse, RiskLikelihood, RiskImpact, RiskStatus,
+    getEngagements, EngagementResponse
+} from '@/lib/api'
 
-// Default engagement UUID to use for risks (first seeded engagement)
-// When engagementRegistry has a real UUID, use that; otherwise show local-only mode
-const getActiveEngagementUuid = () => ENGAGEMENT_REGISTRY[0]?.uuid ?? null
-
-// ─── Local seed data (shown when backend unreachable) ─────────────────────────
-
-const SEED_RISKS: RiskResponse[] = []
-
-// ─── Style maps ───────────────────────────────────────────────────────────────
-
-const likelihoodColor: Record<RiskLikelihood, string> = { High: 'bg-red-100 text-red-700', Medium: 'bg-orange-100 text-orange-700', Low: 'bg-green-100 text-green-700' }
-const impactColor: Record<RiskImpact, string> = { Critical: 'bg-red-600 text-white', High: 'bg-orange-500 text-white', Medium: 'bg-yellow-400 text-gray-900', Low: 'bg-green-400 text-white' }
+const likelihoodColor: Record<RiskLikelihood, string> = {
+    High: 'bg-red-100 text-red-700', Medium: 'bg-orange-100 text-orange-700', Low: 'bg-green-100 text-green-700'
+}
+const impactColor: Record<RiskImpact, string> = {
+    Critical: 'bg-red-600 text-white', High: 'bg-orange-500 text-white', Medium: 'bg-yellow-400 text-gray-900', Low: 'bg-green-400 text-white'
+}
 const statusConfig: Record<RiskStatus, { color: string; dot: string }> = {
     Open: { color: 'text-red-600 bg-red-50', dot: 'bg-red-500' },
     'In Review': { color: 'text-blue-600 bg-blue-50', dot: 'bg-blue-500' },
@@ -38,53 +34,51 @@ function RiskScoreBar({ score }: { score: number }) {
 }
 
 export default function RisksPage() {
-    const uuid = getActiveEngagementUuid()
-
-    const [risks, setRisks] = useState<RiskResponse[]>(SEED_RISKS)
-    const [isLive, setIsLive] = useState(false)
-    const [loading, setLoading] = useState(false)
+    const [engagements, setEngagements] = useState<EngagementResponse[]>([])
+    const [selectedId, setSelectedId] = useState('')
+    const [risks, setRisks] = useState<RiskResponse[]>([])
+    const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [filter, setFilter] = useState<RiskStatus | 'All'>('All')
     const [showAdd, setShowAdd] = useState(false)
     const [newRisk, setNewRisk] = useState({ title: '', area: '', likelihood: 'Medium' as RiskLikelihood, impact: 'Medium' as RiskImpact, owner: '' })
 
     useEffect(() => {
-        if (!uuid) return
-        setLoading(true)
-        getRisks(uuid).then(data => {
-            if (data.length > 0) {
-                setRisks(data)
-                setIsLive(true)
-            }
+        getEngagements().then(data => {
+            setEngagements(data)
+            if (data.length > 0) setSelectedId(data[0].id)
         }).finally(() => setLoading(false))
-    }, [uuid])
+    }, [])
+
+    useEffect(() => {
+        if (!selectedId) return
+        setLoading(true)
+        getRisks(selectedId).then(setRisks).finally(() => setLoading(false))
+    }, [selectedId])
 
     const filtered = filter === 'All' ? risks : risks.filter(r => r.risk_status === filter)
 
     const handleAdd = async () => {
-        if (!newRisk.title.trim()) return
+        if (!newRisk.title.trim() || !selectedId) return
         setSaving(true)
-        if (uuid) {
-            try {
-                const created = await createRisk(uuid, {
-                    title: newRisk.title,
-                    area: newRisk.area || 'General',
-                    likelihood: newRisk.likelihood,
-                    impact: newRisk.impact,
-                    owner: newRisk.owner || 'Unassigned',
-                })
-                setRisks(r => [created, ...r])
-                setIsLive(true)
-            } catch {
-                // Fallback: add locally
-                const score = ({ High: 3, Medium: 2, Low: 1 }[newRisk.likelihood]) * ({ Critical: 4, High: 3, Medium: 2, Low: 1 }[newRisk.impact]) * 8
-                const local: RiskResponse = {
-                    id: crypto.randomUUID(), engagement_id: '', risk_ref: `RSK-${String(risks.length + 1).padStart(3, '0')}`,
-                    title: newRisk.title, area: newRisk.area || 'General', likelihood: newRisk.likelihood, impact: newRisk.impact,
-                    risk_score: Math.min(score, 99), owner: newRisk.owner || 'Unassigned', control_ref: null, risk_status: 'Open', created_at: '', updated_at: '',
-                }
-                setRisks(r => [local, ...r])
+        try {
+            const created = await createRisk(selectedId, {
+                title: newRisk.title,
+                area: newRisk.area || 'General',
+                likelihood: newRisk.likelihood,
+                impact: newRisk.impact,
+                owner: newRisk.owner || 'Unassigned',
+            })
+            setRisks(r => [created, ...r])
+        } catch {
+            // Fallback local
+            const score = ({ High: 3, Medium: 2, Low: 1 }[newRisk.likelihood]) * ({ Critical: 4, High: 3, Medium: 2, Low: 1 }[newRisk.impact]) * 8
+            const local: RiskResponse = {
+                id: crypto.randomUUID(), engagement_id: selectedId, risk_ref: `RSK-${String(risks.length + 1).padStart(3, '0')}`,
+                title: newRisk.title, area: newRisk.area || 'General', likelihood: newRisk.likelihood, impact: newRisk.impact,
+                risk_score: Math.min(score, 99), owner: newRisk.owner || 'Unassigned', control_ref: null, risk_status: 'Open', created_at: '', updated_at: '',
             }
+            setRisks(r => [local, ...r])
         }
         setNewRisk({ title: '', area: '', likelihood: 'Medium', impact: 'Medium', owner: '' })
         setShowAdd(false)
@@ -98,23 +92,26 @@ export default function RisksPage() {
                     <div className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wider">Audit Workflow</div>
                     <div className="flex items-center gap-2 mb-1">
                         <h1 className="text-3xl font-black text-[#002776] tracking-tight">Risk Register</h1>
-                        {isLive ? (
-                            <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-800 border border-green-200">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />LIVE
-                            </span>
-                        ) : (
-                            <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />LOCAL
-                            </span>
-                        )}
                         {loading && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
                     </div>
-                    <p className="text-gray-500 text-sm">Identify, assess, and track audit risks across all engagement areas.</p>
+                    <p className="text-gray-500 text-sm">Identify, assess, and track audit risks across all engagement areas (SA 315 / ISA 315).</p>
                 </div>
-                <button onClick={() => setShowAdd(!showAdd)} className="flex items-center gap-2 bg-[#002776] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#001a54] transition-colors shadow-sm">
+                <button id="add-risk-btn" onClick={() => setShowAdd(!showAdd)}
+                    className="flex items-center gap-2 bg-[#002776] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#001a54] transition-colors shadow-sm">
                     <Plus className="w-4 h-4" /> Add Risk
                 </button>
             </div>
+
+            {/* Engagement selector */}
+            {engagements.length > 0 && (
+                <div className="mb-5 flex items-center gap-3">
+                    <label className="text-sm font-semibold text-gray-500 whitespace-nowrap">Active Engagement:</label>
+                    <select id="engagement-selector" value={selectedId} onChange={e => setSelectedId(e.target.value)}
+                        className="flex-1 max-w-sm h-9 px-3 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#002776]/30 font-medium">
+                        {engagements.map(en => <option key={en.id} value={en.id}>{en.client_name} — {en.engagement_type}</option>)}
+                    </select>
+                </div>
+            )}
 
             {/* Stats */}
             <div className="grid grid-cols-4 gap-4 mb-6">
@@ -134,38 +131,44 @@ export default function RisksPage() {
                 ))}
             </div>
 
-            {/* Add Risk Form */}
+            {/* Add Risk inline form */}
             {showAdd && (
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 mb-5">
                     <h3 className="font-semibold text-gray-900 mb-4">Add New Risk</h3>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                         <div className="col-span-2">
                             <label className="text-xs font-semibold text-gray-600 mb-1 block">Risk Title *</label>
-                            <input value={newRisk.title} onChange={e => setNewRisk(n => ({ ...n, title: e.target.value }))} placeholder="Describe the risk…" className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#002776]/30" />
+                            <input value={newRisk.title} onChange={e => setNewRisk(n => ({ ...n, title: e.target.value }))}
+                                placeholder="Describe the risk…" className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#002776]/30" />
                         </div>
                         <div>
                             <label className="text-xs font-semibold text-gray-600 mb-1 block">Audit Area</label>
-                            <input value={newRisk.area} onChange={e => setNewRisk(n => ({ ...n, area: e.target.value }))} placeholder="e.g. Revenue" className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#002776]/30" />
+                            <input value={newRisk.area} onChange={e => setNewRisk(n => ({ ...n, area: e.target.value }))}
+                                placeholder="e.g. Revenue" className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#002776]/30" />
                         </div>
                         <div>
                             <label className="text-xs font-semibold text-gray-600 mb-1 block">Owner</label>
-                            <input value={newRisk.owner} onChange={e => setNewRisk(n => ({ ...n, owner: e.target.value }))} placeholder="Auditor name" className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#002776]/30" />
+                            <input value={newRisk.owner} onChange={e => setNewRisk(n => ({ ...n, owner: e.target.value }))}
+                                placeholder="Auditor name" className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#002776]/30" />
                         </div>
                         <div>
                             <label className="text-xs font-semibold text-gray-600 mb-1 block">Likelihood</label>
-                            <select value={newRisk.likelihood} onChange={e => setNewRisk(n => ({ ...n, likelihood: e.target.value as RiskLikelihood }))} className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none">
+                            <select value={newRisk.likelihood} onChange={e => setNewRisk(n => ({ ...n, likelihood: e.target.value as RiskLikelihood }))}
+                                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none">
                                 {['High', 'Medium', 'Low'].map(v => <option key={v}>{v}</option>)}
                             </select>
                         </div>
                         <div>
                             <label className="text-xs font-semibold text-gray-600 mb-1 block">Impact</label>
-                            <select value={newRisk.impact} onChange={e => setNewRisk(n => ({ ...n, impact: e.target.value as RiskImpact }))} className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none">
+                            <select value={newRisk.impact} onChange={e => setNewRisk(n => ({ ...n, impact: e.target.value as RiskImpact }))}
+                                className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none">
                                 {['Critical', 'High', 'Medium', 'Low'].map(v => <option key={v}>{v}</option>)}
                             </select>
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={handleAdd} disabled={saving} className="flex items-center gap-2 bg-[#002776] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#001a54] disabled:opacity-50">
+                        <button onClick={handleAdd} disabled={saving}
+                            className="flex items-center gap-2 bg-[#002776] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#001a54] disabled:opacity-50">
                             {saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Saving…</> : 'Add to Register'}
                         </button>
                         <button onClick={() => setShowAdd(false)} className="text-gray-500 text-sm font-semibold px-4 py-2 rounded-lg hover:bg-gray-100">Cancel</button>
@@ -177,56 +180,63 @@ export default function RisksPage() {
             <div className="flex items-center gap-2 mb-4">
                 <Filter className="w-4 h-4 text-gray-400" />
                 {(['All', 'Open', 'In Review', 'Mitigated', 'Accepted'] as const).map(f => (
-                    <button key={f} onClick={() => setFilter(f)} className={`text-xs font-semibold px-3 py-1 rounded-full border transition-all ${filter === f ? 'bg-[#002776] text-white border-[#002776]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>{f}</button>
+                    <button key={f} onClick={() => setFilter(f)}
+                        className={`text-xs font-semibold px-3 py-1 rounded-full border transition-all ${filter === f ? 'bg-[#002776] text-white border-[#002776]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>{f}</button>
                 ))}
                 <span className="ml-auto text-xs text-gray-400 flex items-center gap-1"><ArrowUpDown className="w-3 h-3" />Sorted by risk score</span>
             </div>
 
             {/* Risk Table */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                <table className="w-full text-sm">
-                    <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
-                        <tr>
-                            <th className="text-left px-5 py-3">ID</th>
-                            <th className="text-left px-5 py-3">Risk</th>
-                            <th className="text-left px-5 py-3">Area</th>
-                            <th className="text-center px-5 py-3">Likelihood</th>
-                            <th className="text-center px-5 py-3">Impact</th>
-                            <th className="text-left px-5 py-3">Score</th>
-                            <th className="text-left px-5 py-3">Status</th>
-                            <th className="text-left px-5 py-3">Owner</th>
-                            <th className="px-5 py-3" />
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-50">
-                        {filtered.sort((a, b) => b.risk_score - a.risk_score).map(risk => {
-                            const s = statusConfig[risk.risk_status]
-                            return (
-                                <tr key={risk.id} className="hover:bg-gray-50 transition-colors cursor-pointer">
-                                    <td className="px-5 py-3.5 font-mono text-xs text-gray-500">{risk.risk_ref}</td>
-                                    <td className="px-5 py-3.5 font-medium text-gray-900 max-w-xs">{risk.title}</td>
-                                    <td className="px-5 py-3.5 text-gray-500">{risk.area}</td>
-                                    <td className="px-5 py-3.5 text-center">
-                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${likelihoodColor[risk.likelihood]}`}>{risk.likelihood}</span>
-                                    </td>
-                                    <td className="px-5 py-3.5 text-center">
-                                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${impactColor[risk.impact]}`}>{risk.impact}</span>
-                                    </td>
-                                    <td className="px-5 py-3.5"><RiskScoreBar score={risk.risk_score} /></td>
-                                    <td className="px-5 py-3.5">
-                                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full ${s.color}`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
-                                            {risk.risk_status}
-                                        </span>
-                                    </td>
-                                    <td className="px-5 py-3.5 text-gray-500 text-xs">{risk.owner}</td>
-                                    <td className="px-5 py-3.5"><ChevronRight className="w-4 h-4 text-gray-300" /></td>
-                                </tr>
-                            )
-                        })}
-                    </tbody>
-                </table>
-            </div>
+            {risks.length === 0 && !loading ? (
+                <div className="text-center py-14 text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">
+                    <ShieldAlert className="w-9 h-9 mx-auto mb-3 opacity-30" />
+                    <p className="font-semibold text-gray-500 mb-3">No risks identified yet. Click "Add Risk" to start your risk assessment.</p>
+                </div>
+            ) : (
+                <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
+                            <tr>
+                                <th className="text-left px-5 py-3">ID</th>
+                                <th className="text-left px-5 py-3">Risk</th>
+                                <th className="text-left px-5 py-3">Area</th>
+                                <th className="text-center px-5 py-3">Likelihood</th>
+                                <th className="text-center px-5 py-3">Impact</th>
+                                <th className="text-left px-5 py-3">Score</th>
+                                <th className="text-left px-5 py-3">Status</th>
+                                <th className="text-left px-5 py-3">Owner</th>
+                                <th className="px-5 py-3" />
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {filtered.sort((a, b) => b.risk_score - a.risk_score).map(risk => {
+                                const s = statusConfig[risk.risk_status]
+                                return (
+                                    <tr key={risk.id} className="hover:bg-gray-50 transition-colors cursor-pointer">
+                                        <td className="px-5 py-3.5 font-mono text-xs text-gray-500">{risk.risk_ref}</td>
+                                        <td className="px-5 py-3.5 font-medium text-gray-900 max-w-xs">{risk.title}</td>
+                                        <td className="px-5 py-3.5 text-gray-500">{risk.area}</td>
+                                        <td className="px-5 py-3.5 text-center">
+                                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${likelihoodColor[risk.likelihood]}`}>{risk.likelihood}</span>
+                                        </td>
+                                        <td className="px-5 py-3.5 text-center">
+                                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${impactColor[risk.impact]}`}>{risk.impact}</span>
+                                        </td>
+                                        <td className="px-5 py-3.5"><RiskScoreBar score={risk.risk_score} /></td>
+                                        <td className="px-5 py-3.5">
+                                            <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full ${s.color}`}>
+                                                <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />{risk.risk_status}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-3.5 text-gray-500 text-xs">{risk.owner}</td>
+                                        <td className="px-5 py-3.5"><ChevronRight className="w-4 h-4 text-gray-300" /></td>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </AuditShell>
     )
 }
