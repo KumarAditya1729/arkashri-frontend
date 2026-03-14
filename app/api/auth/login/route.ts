@@ -8,13 +8,22 @@ export async function POST(request: Request) {
         const body = await request.json()
         const { email, password } = body
 
-        const res = await fetch(`${BACKEND_URL}/api/v1/token/`, {
+        // Gracefully handle if NEXT_PUBLIC_API_URL includes /api/v1 or trailing slashes
+        const baseUrl = BACKEND_URL.replace(/\/+$/, '')
+        const targetUrl = baseUrl.endsWith('/api/v1') 
+            ? `${baseUrl}/token/` 
+            : `${baseUrl}/api/v1/token/`
+
+        console.log(`[AUTH] login attempt to: ${targetUrl}`)
+
+        const res = await fetch(targetUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password }),
         })
 
         if (!res.ok) {
+            console.error(`[AUTH] error from backend status: ${res.status}`)
             const error = await res.text()
             return NextResponse.json({ error }, { status: res.status })
         }

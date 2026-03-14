@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8001'
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
 export async function GET(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
     const { path } = await params
@@ -30,8 +30,22 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ p
 
 async function handleProxy(request: Request, path: string) {
     const searchParams = new URL(request.url).search
-    const apiPath = path.startsWith('api/') ? path : `api/${path}`
-    const targetUrl = `${BACKEND_URL.replace(/\/+$/, '')}/${apiPath}${searchParams}`
+    
+    // Normalize backend URL and handle if it already includes /api/v1
+    const baseUrl = BACKEND_URL.replace(/\/+$/, '')
+    let targetUrl: string
+    
+    if (baseUrl.endsWith('/api/v1')) {
+        // If baseUrl already has /api/v1, we need to strip 'api/v1/' from path if it has it
+        const cleanPath = path.startsWith('api/v1/') ? path.slice(7) : path
+        // Ensure we don't end up with double slashes if cleanPath starts with /
+        targetUrl = `${baseUrl}/${cleanPath.replace(/^\/+/, '')}${searchParams}`
+    } else {
+        const apiPath = path.startsWith('api/') ? path : `api/${path}`
+        targetUrl = `${baseUrl}/${apiPath}${searchParams}`
+    }
+
+    console.log(`[PROXY] forwarding to: ${targetUrl}`)
 
     const cookieStore = await cookies()
     const token = cookieStore.get('arkashri_token')?.value
