@@ -48,6 +48,7 @@ export default function RegisterPage() {
 
     const [form, setForm] = useState({ fullName: '', email: '', organisation: '', role: 'auditor', password: '', confirm: '' })
     const [showPassword, setShowPassword] = useState(false)
+    const [acceptedTos, setAcceptedTos] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
@@ -57,24 +58,49 @@ export default function RegisterPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
-
+        if (!acceptedTos) return setError('You must accept the Terms of Service to continue.')
         if (form.password !== form.confirm) return setError('Passwords do not match.')
         if (form.password.length < 8) return setError('Password must be at least 8 characters.')
 
         setLoading(true)
-        await new Promise((r) => setTimeout(r, 1000))
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fullName: form.fullName,
+                    email: form.email.trim().toLowerCase(),
+                    password: form.password,
+                    organisation: form.organisation,
+                    role: form.role,
+                }),
+            })
 
-        login({
-            id: crypto.randomUUID(),
-            fullName: form.fullName,
-            email: form.email.trim().toLowerCase(),
-            role: form.role as any,
-            organisation: form.organisation,
-            avatarInitials: form.fullName.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2),
-        })
-        router.push('/dashboard')
+            const data = await res.json()
+
+            if (!res.ok) {
+                const msg = typeof data.error === 'string' ? data.error : JSON.stringify(data)
+                setError(msg.includes('already registered') ? 'Email is already registered. Try signing in.' : `Registration failed: ${msg}`)
+                setLoading(false)
+                return
+            }
+
+            // Registration succeeded — set auth store with real user data
+            login({
+                id: data.user.id,
+                fullName: data.user.full_name,
+                email: data.user.email,
+                role: data.user.role.toLowerCase() as any,
+                organisation: form.organisation,
+                avatarInitials: data.user.initials,
+            })
+            router.push('/dashboard')
+        } catch (err) {
+            setError('Network error. Please check your connection and try again.')
+        }
         setLoading(false)
     }
+
 
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
@@ -192,10 +218,24 @@ export default function RegisterPage() {
                             </div>
                         </div>
 
+                        <div className="flex items-start gap-2 mt-4 col-span-2">
+                            <input
+                                type="checkbox"
+                                id="tos"
+                                required
+                                checked={acceptedTos}
+                                onChange={(e) => setAcceptedTos(e.target.checked)}
+                                className="mt-1 w-4 h-4 rounded border-gray-300 text-[#002776] focus:ring-[#002776] cursor-pointer shrink-0"
+                            />
+                            <label htmlFor="tos" className="text-xs text-gray-600 leading-relaxed cursor-pointer">
+                                I acknowledge Arkashri is an AI-assisted decision support system. I agree to the <Link href="/terms" className="text-[#002776] hover:underline font-semibold">Terms of Service</Link> and understand that all outputs require human review by a qualified professional before use in any compliance context.
+                            </label>
+                        </div>
+
                         <button
                             id="register-btn"
                             type="submit"
-                            disabled={loading}
+                            disabled={loading || !acceptedTos}
                             className="w-full h-11 mt-2 bg-[#002776] hover:bg-[#001a54] text-white font-semibold rounded-lg text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
                         >
                             {loading ? (
