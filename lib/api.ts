@@ -29,7 +29,7 @@ function buildHeaders(extra: Record<string, string> = {}): Record<string, string
 // ── Retry helper ─────────────────────────────────────────────────────────────
 const RETRY_DELAYS_MS = [500, 1000, 2000] // 3 attempts, exponential backoff
 
-async function apiFetch<T>(path: string, init?: RequestInit, _attempt = 0): Promise<T> {
+export async function apiFetch<T>(path: string, init?: RequestInit, _attempt = 0): Promise<T> {
     const isFormData = init?.body instanceof FormData
     const h = isFormData
         ? { 'X-Arkashri-Tenant': TENANT }
@@ -112,6 +112,7 @@ export interface EngagementResponse {
     id: string
     tenant_id: string
     jurisdiction: string
+    standards_framework: string
     client_name: string
     engagement_type: string
     status: EngagementStatus
@@ -242,6 +243,13 @@ export interface RegulatoryDoc {
     content: string | null
 }
 
+export interface RegulatoryDiffResponse {
+    doc1_id: number
+    doc2_id: number
+    diff_lines: string[]
+    diff_text: string
+}
+
 // ─── API Functions ────────────────────────────────────────────────────────────
 
 // Auth - Now uses Next.js Route Handlers for HttpOnly cookies
@@ -364,6 +372,10 @@ export async function promoteRegulatoryDoc(docId: number): Promise<void> {
         method: 'POST',
         body: JSON.stringify({ notes: 'Acknowledged via UI' }),
     })
+}
+
+export async function diffRegulatoryDocs(docId1: number, docId2: number): Promise<RegulatoryDiffResponse> {
+    return apiFetch<RegulatoryDiffResponse>(`/api/v1/regulatory/updates/diff/${docId1}/${docId2}`)
 }
 
 // ─── Automation Score Types ───────────────────────────────────────────────────
@@ -526,3 +538,71 @@ export async function withdrawSignature(
 export async function getAdminEvidenceLedger(): Promise<EvidenceLedgerEntry[]> {
     return apiFetch<EvidenceLedgerEntry[]>("/v1/admin/evidence-ledger");
 }
+
+// ─── Planning Types ───────────────────────────────────────────────────────────
+
+export type PhaseStatus = 'UPCOMING' | 'IN_PROGRESS' | 'COMPLETED'
+
+export interface PhaseOut {
+    id: string
+    engagement_id: string
+    name: string
+    status: PhaseStatus
+    start_date: string | null
+    end_date: string | null
+    owner: string | null
+    progress: number
+}
+
+export interface PhaseCreate {
+    name: string
+    status?: PhaseStatus
+    start_date?: string | null
+    end_date?: string | null
+    owner?: string | null
+    progress?: number
+}
+
+export interface TeamMemberOut {
+    id: string
+    engagement_id: string
+    name: string
+    role: string
+    initials: string | null
+    color: string | null
+}
+
+export interface TeamMemberCreate {
+    name: string
+    role: string
+    initials?: string
+    color?: string
+}
+
+// Planning API
+export async function listPhases(engagementId: string): Promise<PhaseOut[]> {
+    try {
+        return await apiFetch<PhaseOut[]>(`/api/v1/planning/engagements/${engagementId}/phases`)
+    } catch { return [] }
+}
+
+export async function createPhase(engagementId: string, payload: PhaseCreate): Promise<PhaseOut> {
+    return apiFetch<PhaseOut>(`/api/v1/planning/engagements/${engagementId}/phases`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    })
+}
+
+export async function listTeamMembers(engagementId: string): Promise<TeamMemberOut[]> {
+    try {
+        return await apiFetch<TeamMemberOut[]>(`/api/v1/planning/engagements/${engagementId}/team`)
+    } catch { return [] }
+}
+
+export async function addTeamMember(engagementId: string, payload: TeamMemberCreate): Promise<TeamMemberOut> {
+    return apiFetch<TeamMemberOut>(`/api/v1/planning/engagements/${engagementId}/team`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    })
+}
+
