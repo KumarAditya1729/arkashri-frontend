@@ -599,6 +599,22 @@ export async function listTeamMembers(engagementId: string): Promise<TeamMemberO
     } catch { return [] }
 }
 
+export interface AuditRunOut {
+    id: string
+    engagement_id: string
+    audit_type: string
+    status: string
+    tenant_id: string
+    jurisdiction: string
+    created_at: string
+}
+
+export async function listAuditRuns(engagementId: string): Promise<AuditRunOut[]> {
+    try {
+        return await apiFetch<AuditRunOut[]>(`/api/v1/orchestration/engagements/${engagementId}/runs`)
+    } catch { return [] }
+}
+
 export async function addTeamMember(engagementId: string, payload: TeamMemberCreate): Promise<TeamMemberOut> {
     return apiFetch<TeamMemberOut>(`/api/v1/planning/engagements/${engagementId}/team`, {
         method: 'POST',

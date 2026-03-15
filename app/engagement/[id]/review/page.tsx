@@ -44,9 +44,15 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
 
     useEffect(() => {
         setLoading(true)
-        getApprovals().then(data => {
-            if (data.length > 0) {
-                const mapped: LocalReview[] = data.map((a, i) => ({
+        Promise.all([
+            getApprovals(),
+            import('@/lib/api').then(m => m.listAuditRuns(id).catch(() => []))
+        ]).then(([data, runs]) => {
+            const runIds = new Set(runs.map((r: any) => r.id))
+            const engagementApprovals = data.filter((a: any) => a.payload?.run_id && runIds.has(a.payload.run_id))
+
+            if (engagementApprovals.length > 0) {
+                const mapped: LocalReview[] = engagementApprovals.map((a: any, i: number) => ({
                     id: a.id.slice(0, 8).toUpperCase(),
                     section: a.reference_type || `Workpaper ${i + 1}`,
                     description: a.reason || 'Approval request',
@@ -54,7 +60,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
                     reviewedBy: 'Senior Auditor',
                     status: approvalStatusToReview(a.status),
                     backendId: a.id,
-                    comments: (a.actions || []).filter(ac => ac.action_type === 'COMMENTED').map(ac => ({
+                    comments: (a.actions || []).filter((ac: any) => ac.action_type === 'COMMENTED').map((ac: any) => ({
                         author: ac.actor_id,
                         text: ac.notes ?? '',
                         time: new Date(ac.created_at).toLocaleString(),
@@ -62,13 +68,22 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
                 }))
                 setItems(mapped)
                 setIsLive(true)
+            } else {
+                setItems([])
+                setIsLive(true)
             }
         }).finally(() => setLoading(false))
-    }, [])
+    }, [id])
 
-    const addComment = (id_val: string) => {
+    const addComment = async (id_val: string) => {
         const text = newComment[id_val]?.trim()
         if (!text) return
+        
+        const item = items.find(it => it.id === id_val)
+        if (item?.backendId) {
+            try { await actionApproval(item.backendId, 'COMMENTED', text) } catch { console.error('Failed to save comment') }
+        }
+        
         setItems(its => its.map(it => it.id === id_val ? {
             ...it,
             comments: [...it.comments, { author: 'Current User', text, time: new Date().toLocaleString() }]
