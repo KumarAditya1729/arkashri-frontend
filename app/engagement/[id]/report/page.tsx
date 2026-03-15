@@ -82,7 +82,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
     const totalWords = Object.values(content).reduce((sum, c) => sum + (c.trim() ? c.trim().split(/\s+/).length : 0), 0)
     const complete = SECTIONS.filter(s => s.status === 'complete').length
 
-    const isJointSignatureRequired = engagement?.engagement_type === 'statutory_audit' || engagement?.engagement_type === 'external_audit'
+    const isJointSignatureRequired = engagement?.engagement_type === 'STATUTORY_AUDIT' || engagement?.engagement_type === 'EXTERNAL_AUDIT'
 
     return (
         <>
@@ -92,10 +92,66 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                     <p className="text-gray-500 mt-1 text-xs text-balance">Draft, review and finalise the audit opinion and report for ENG-{id}.</p>
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={() => console.log('Preview clicked')} className="flex items-center gap-2 border border-gray-100 text-gray-700 text-[10px] font-bold px-4 py-1.5 rounded-lg hover:bg-gray-50 transition-colors uppercase tracking-widest">
+                    <button 
+                        onClick={() => {
+                            const previewContent = Object.values(content).join('\n\n---\n\n')
+                            const blob = new Blob([previewContent], { type: 'text/plain' })
+                            const url = URL.createObjectURL(blob)
+                            window.open(url, '_blank')
+                        }} 
+                        className="flex items-center gap-2 border border-gray-100 text-gray-700 text-[10px] font-bold px-4 py-1.5 rounded-lg hover:bg-gray-50 transition-colors uppercase tracking-widest"
+                    >
                         <Printer className="w-3.5 h-3.5" /> Preview
                     </button>
-                    <button onClick={() => console.log('Export PDF clicked')} className="flex items-center gap-2 bg-[#002776] text-white text-[10px] font-bold px-4 py-1.5 rounded-lg hover:bg-[#001a54] transition-colors shadow-sm uppercase tracking-widest">
+                    <button 
+                        onClick={() => {
+                            const htmlContent = `
+                                <html>
+                                    <head>
+                                        <title>Audit Report ENG-${id}</title>
+                                        <style>
+                                            body { font-family: Arial, sans-serif; margin: 40px; }
+                                            h1 { color: #002776; border-bottom: 2px solid #002776; padding-bottom: 10px; }
+                                            h2 { color: #333; margin-top: 30px; font-size: 16px; text-transform: uppercase; }
+                                            .section { margin-bottom: 20px; }
+                                            .status { background: #e8f5e8; padding: 6px 10px; border-radius: 4px; margin: 10px 0; font-size: 12px; font-weight: bold; color: #166534; display: inline-block; }
+                                            .content { line-height: 1.6; color: #444; font-size: 14px; white-space: pre-wrap; }
+                                            .footer { margin-top: 50px; font-size: 10px; color: #888; border-top: 1px solid #eee; padding-top: 20px; text-align: center; }
+                                        </style>
+                                    </head>
+                                    <body>
+                                        <h1>Audit Report</h1>
+                                        <div style="margin-bottom: 30px; font-size: 14px; color: #666;">
+                                            <strong>Engagement ID:</strong> ${id}<br>
+                                            <strong>Type:</strong> ${engagement?.engagement_type?.toLowerCase().replace('_', ' ') || 'Unknown'}<br>
+                                            <strong>Date Generated:</strong> ${new Date().toLocaleDateString()}
+                                        </div>
+                                        ${Object.entries(content).map(([identifier, text]) => {
+                                            const sec = SECTIONS.find(s => s.id === identifier);
+                                            return `
+                                            <div class="section">
+                                                <h2>${sec?.title || identifier}</h2>
+                                                ${sec?.status === 'complete' ? '<div class="status">SIGNED OFF</div>' : '<div class="status" style="background:#f3f4f6;color:#374151;">DRAFT</div>'}
+                                                <div class="content">${text}</div>
+                                            </div>
+                                            `;
+                                        }).join('')}
+                                        <div class="footer">Generated by Arkashri OS | Immutable Ledger Record</div>
+                                    </body>
+                                </html>
+                            `
+                            const blob = new Blob([htmlContent], { type: 'text/html' })
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement('a')
+                            a.href = url
+                            a.download = `audit-report-${id}.html`
+                            document.body.appendChild(a)
+                            a.click()
+                            document.body.removeChild(a)
+                            URL.revokeObjectURL(url)
+                        }} 
+                        className="flex items-center gap-2 bg-[#002776] text-white text-[10px] font-bold px-4 py-1.5 rounded-lg hover:bg-[#001a54] transition-colors shadow-sm uppercase tracking-widest"
+                    >
                         <Download className="w-3.5 h-3.5" /> Export PDF
                     </button>
                 </div>
@@ -184,7 +240,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                                 Joint Signature Protocol
                             </h3>
                             <p className="text-[9px] text-blue-100 uppercase font-bold tracking-tighter mb-4">
-                                This {engagement?.engagement_type.replace('_', ' ')} requires multi-partner attestation before blockchain sealing.
+                                This {engagement?.engagement_type?.toLowerCase().replace('_', ' ')} requires multi-partner attestation before blockchain sealing.
                             </p>
 
                             {!sealSession ? (
