@@ -1,33 +1,62 @@
 'use client'
 
 import { useAuditStore } from '../../store/auditStore'
-import { Bot, Info, Crosshair, ExternalLink, Activity } from 'lucide-react'
+import { Bot, Info, Crosshair, ExternalLink, Activity, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { DisclaimerBadge } from './DisclaimerBadge'
+import { useState, useEffect } from 'react'
+import { apiFetch } from '@/lib/api'
+
+interface ContextInsight {
+    suggestion: string;
+    confidence: number;
+    regulatory_bindings: string[];
+}
 
 export function AIBox() {
     const currentStage = useAuditStore((state) => state.currentStage)
     const auditType = useAuditStore((state) => state.auditType)
+    const engagementId = useAuditStore((state) => state.engagementId)
 
-    // Contextual mock data based on stage
-    let contextTopic = ''
-    let suggestion = ''
-    let confidence = 0
+    const [insight, setInsight] = useState<ContextInsight | null>(null)
+    const [loading, setLoading] = useState(false)
 
-    if (currentStage === 'Dashboard') {
-        contextTopic = 'Engagement Overview'
-        suggestion = `Based on the active ${auditType || 'Audit'} mandate, there are 4 pending reviews and a missing independence declaration.`
-        confidence = 94
-    } else if (currentStage === 'Risks') {
-        contextTopic = 'Risk Assessment'
-        suggestion = `I detected a high variance in Q3 OPEX vs industry baseline. Suggesting the addition of a 'Revenue Recognition' Forensic Procedure.`
-        confidence = 88
-    } else {
-        contextTopic = 'Process Execution'
-        suggestion = `Cross-referencing PCAOB standard AS-2315. Please ensure adequate sample sizing is documented.`
-        confidence = 98
-    }
+    useEffect(() => {
+        if (!engagementId) return;
+
+        let isMounted = true;
+        const fetchInsight = async () => {
+            setLoading(true);
+            try {
+                const data = await apiFetch<ContextInsight>(`/api/v1/analytics/contextual-lens?engagement_id=${engagementId}&current_stage=${currentStage}`)
+                if (isMounted) setInsight(data)
+            } catch (err) {
+                console.error("Failed to load contextual insight", err)
+                if (isMounted) {
+                    setInsight({
+                        suggestion: "AI Assistant encountered an error generating context.",
+                        confidence: 0,
+                        regulatory_bindings: []
+                    })
+                }
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        }
+        
+        fetchInsight()
+        return () => { isMounted = false }
+    }, [engagementId, currentStage])
+
+    // Fallback or static text when no engagement is selected
+    const contextTopic = currentStage === 'Dashboard' ? 'Engagement Overview' : 
+                         currentStage === 'Risks' ? 'Risk Assessment' : 'Process Execution'
+    
+    const displaySuggestion = insight ? insight.suggestion : "Please select or create an engagement to receive live contextual insights."
+    const displayConfidence = insight ? Math.round(insight.confidence) : 0
+    const displayBindings = insight ? insight.regulatory_bindings : []
 
     return (
         <div className="flex flex-col h-full bg-slate-50">
@@ -53,45 +82,59 @@ export function AIBox() {
                     {/* Suggestion Card */}
                     <div className="border border-indigo-100 rounded-lg bg-indigo-50/50 shadow-sm overflow-hidden">
                         <div className="bg-indigo-100/50 px-3 py-2 border-b border-indigo-100 flex justify-between items-center">
-                            <span className="text-xs font-bold text-indigo-800 uppercase">Grounded Suggestion</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-indigo-800 uppercase">Grounded Suggestion</span>
+                                <DisclaimerBadge aiConfidence={displayConfidence} />
+                            </div>
                             <Badge variant="outline" className="text-indigo-700 bg-white border-indigo-200">
-                                AI-9173A
+                                GPT-4o
                             </Badge>
                         </div>
                         <div className="p-4">
-                            <p className="text-sm text-gray-800 mb-4 leading-relaxed">
-                                {suggestion}
-                            </p>
+                            {loading ? (
+                                <div className="flex items-center justify-center p-4 text-indigo-500">
+                                    <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                                    <span className="text-sm font-medium">Analyzing Context...</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <p className="text-sm text-gray-800 mb-4 leading-relaxed">
+                                        {displaySuggestion}
+                                    </p>
 
-                            <div className="flex justify-between items-center bg-white p-2 rounded border text-xs">
-                                <span className="text-gray-500 flex items-center">
-                                    <Activity className="w-3 h-3 mr-1" /> Confidence
-                                </span>
-                                <span className="font-bold text-indigo-700">{confidence}%</span>
-                            </div>
+                                    {engagementId && (
+                                        <div className="flex justify-between items-center bg-white p-2 rounded border text-xs">
+                                            <span className="text-gray-500 flex items-center">
+                                                <Activity className="w-3 h-3 mr-1" /> Confidence
+                                            </span>
+                                            <span className="font-bold text-indigo-700">{displayConfidence}%</span>
+                                        </div>
+                                    )}
+                                </>
+                            )}
                         </div>
                         <div className="bg-white px-4 py-3 border-t flex justify-end gap-2">
-                            <Button variant="ghost" size="sm" className="text-gray-500" onClick={() => console.log('AI suggestion dismissed')}>Dismiss</Button>
-                            <Button size="sm" className="bg-[#002776] hover:bg-[#001f5c]" onClick={() => console.log('AI action applied')}>Apply Action</Button>
+                            <Button variant="ghost" size="sm" className="text-gray-500" disabled={loading || !insight} onClick={() => console.log('AI suggestion dismissed')}>Dismiss</Button>
+                            <Button size="sm" className="bg-[#002776] hover:bg-[#001f5c]" disabled={loading || !insight} onClick={() => console.log('AI action applied')}>Apply Action</Button>
                         </div>
                     </div>
 
                     {/* Compliance Source */}
-                    <div>
-                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center">
-                            <Info className="w-3 h-3 mr-1" /> Regulatory Binding
-                        </h3>
-                        <ul className="space-y-2">
-                            <li className="text-sm p-2 border rounded bg-white flex justify-between items-center cursor-pointer hover:border-gray-400">
-                                <span className="truncate mr-2">ISA 315 (Revised 2019)</span>
-                                <ExternalLink className="w-3 h-3 text-gray-400 shrink-0" />
-                            </li>
-                            <li className="text-sm p-2 border rounded bg-white flex justify-between items-center cursor-pointer hover:border-gray-400">
-                                <span className="truncate mr-2">PCAOB AS 2110</span>
-                                <ExternalLink className="w-3 h-3 text-gray-400 shrink-0" />
-                            </li>
-                        </ul>
-                    </div>
+                    {displayBindings.length > 0 && typeof displayBindings === 'object' && (
+                        <div>
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-2 flex items-center">
+                                <Info className="w-3 h-3 mr-1" /> Regulatory Binding
+                            </h3>
+                            <ul className="space-y-2">
+                                {displayBindings.map((binding, idx) => (
+                                    <li key={idx} className="text-sm p-2 border rounded bg-white flex justify-between items-center cursor-pointer hover:border-gray-400">
+                                        <span className="truncate mr-2">{binding}</span>
+                                        <ExternalLink className="w-3 h-3 text-gray-400 shrink-0" />
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
 
                 </div>
             </ScrollArea>
