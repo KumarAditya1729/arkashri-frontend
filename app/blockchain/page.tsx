@@ -49,6 +49,24 @@ export default function BlockchainPage() {
   const [evidenceHash, setEvidenceHash] = useState('')
   const [loading, setLoading] = useState(true)
   const [anchoring, setAnchoring] = useState(false)
+  const [verifyHash, setVerifyHash] = useState('')
+  const [verifying, setVerifying] = useState(false)
+  const [verifyResult, setVerifyResult] = useState<any>(null)
+
+  const handleVerifyEvidence = async () => {
+    if (!verifyHash.trim()) return
+
+    try {
+      setVerifying(true)
+      const data = await import('@/lib/api').then(m => m.verifyMultiChainEvidence(verifyHash))
+      setVerifyResult(data)
+    } catch (error) {
+      console.error('Failed to verify evidence:', error)
+      setVerifyResult({ overall_verified: false, multi_chain_consensus: false, network_results: {} })
+    } finally {
+      setVerifying(false)
+    }
+  }
 
   useEffect(() => {
     fetchNetworkStatus()
@@ -58,37 +76,23 @@ export default function BlockchainPage() {
   const fetchNetworkStatus = async () => {
     try {
       setLoading(true)
+      const data = await import('@/lib/api').then(m => m.getMultiChainStatus())
       
-      // Mock network status - in production, fetch from API
-      const mockNetworks: Record<string, NetworkStatus> = {
-        polkadot: {
-          connected: true,
-          network: 'polkadot',
-          blockNumber: 15432123,
-          latestBlockHash: '0x1234...abcd',
-          error: undefined
-        },
-        ethereum: {
-          connected: true,
-          network: 'ethereum',
-          blockNumber: 19876543,
-          gasPrice: '25.5',
-          networkId: 1,
-          latestBlockHash: '0x5678...efgh',
-          error: undefined
-        },
-        polygon: {
-          connected: true,
-          network: 'polygon',
-          blockNumber: 45678901,
-          gasPrice: '15.2',
-          networkId: 137,
-          latestBlockHash: '0x9abc...def0',
-          error: undefined
-        }
-      }
+      // Map the snake_case backend keys to the expected camelCase local UI keys
+      const formattedNetworks = Object.entries(data).reduce((acc, [key, val]) => {
+          acc[key] = {
+              connected: val.connected,
+              network: val.network,
+              blockNumber: val.block_number || 0,
+              gasPrice: val.gas_price,
+              networkId: val.network_id,
+              latestBlockHash: val.latest_block_hash,
+              error: val.error,
+          }
+          return acc
+      }, {} as Record<string, NetworkStatus>)
 
-      setNetworks(mockNetworks)
+      setNetworks(formattedNetworks)
     } catch (error) {
       console.error('Failed to fetch network status:', error)
     } finally {
@@ -98,34 +102,18 @@ export default function BlockchainPage() {
 
   const fetchAnchoredEvidence = async () => {
     try {
-      // Mock anchored evidence - in production, fetch from API
-      const mockEvidence: AnchoredEvidence[] = [
-        {
-          id: '1',
-          evidenceHash: '0xabc123def456...',
-          networksAnchored: ['polkadot', 'ethereum', 'polygon'],
-          timestamp: '2026-03-10T10:30:00Z',
-          verificationUrls: {
-            polkadot: 'https://verify.arkashri.com/evidence/0xabc123?network=polkadot',
-            ethereum: 'https://verify.arkashri.com/evidence/0xabc123?network=ethereum',
-            polygon: 'https://verify.arkashri.com/evidence/0xabc123?network=polygon'
-          },
-          multiChainHash: '0x789xyz456...'
-        },
-        {
-          id: '2',
-          evidenceHash: '0xdef789ghi012...',
-          networksAnchored: ['ethereum', 'polygon'],
-          timestamp: '2026-03-10T09:15:00Z',
-          verificationUrls: {
-            ethereum: 'https://verify.arkashri.com/evidence/0xdef789?network=ethereum',
-            polygon: 'https://verify.arkashri.com/evidence/0xdef789?network=polygon'
-          },
-          multiChainHash: '0x456uvw789...'
-        }
-      ]
+      const { anchored_evidence } = await import('@/lib/api').then(m => m.getAnchoredEvidence())
+      
+      const formattedEvidence = anchored_evidence.map(ev => ({
+          id: ev.id || Date.now().toString(),
+          evidenceHash: ev.evidence_hash,
+          networksAnchored: ev.networks_anchored,
+          timestamp: ev.timestamp || ev.anchoring_timestamp || new Date().toISOString(),
+          verificationUrls: ev.verification_urls || {},
+          multiChainHash: ev.multi_chain_hash,
+      }))
 
-      setAnchoredEvidence(mockEvidence)
+      setAnchoredEvidence(formattedEvidence)
     } catch (error) {
       console.error('Failed to fetch anchored evidence:', error)
     }
@@ -137,25 +125,21 @@ export default function BlockchainPage() {
     try {
       setAnchoring(true)
       
-      // Mock anchoring - in production, call API
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const result = await import('@/lib/api').then(m => m.anchorMultiChainEvidence(evidenceHash, { source: "ui_manual_anchor" }))
       
-      // Add new anchored evidence
       const newEvidence: AnchoredEvidence = {
-        id: Date.now().toString(),
-        evidenceHash,
-        networksAnchored: ['polkadot', 'ethereum', 'polygon'],
-        timestamp: new Date().toISOString(),
-        verificationUrls: {
-          polkadot: `https://verify.arkashri.com/evidence/${evidenceHash}?network=polkadot`,
-          ethereum: `https://verify.arkashri.com/evidence/${evidenceHash}?network=ethereum`,
-          polygon: `https://verify.arkashri.com/evidence/${evidenceHash}?network=polygon`
-        },
-        multiChainHash: `0x${Math.random().toString(36).substring(2, 15)}...`
+        id: result.id || Date.now().toString(),
+        evidenceHash: result.evidence_hash,
+        networksAnchored: result.networks_anchored || [],
+        timestamp: result.anchoring_timestamp || new Date().toISOString(),
+        verificationUrls: result.verification_urls || {},
+        multiChainHash: result.multi_chain_hash,
       }
 
       setAnchoredEvidence(prev => [newEvidence, ...prev])
       setEvidenceHash('')
+      // Refresh network status to update blocks/gas
+      await fetchNetworkStatus()
     } catch (error) {
       console.error('Failed to anchor evidence:', error)
     } finally {
@@ -358,11 +342,26 @@ export default function BlockchainPage() {
                   id="verify-hash"
                   placeholder="Enter evidence hash to verify..."
                   className="font-mono"
+                  value={verifyHash}
+                  onChange={(e) => setVerifyHash(e.target.value)}
                 />
               </div>
-              <Button className="w-full">
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Verify Evidence
+              <Button 
+                onClick={handleVerifyEvidence}
+                disabled={!verifyHash.trim() || verifying}
+                className="w-full"
+              >
+                {verifying ? (
+                  <>
+                    <Clock className="mr-2 h-4 w-4 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Verify Evidence
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -375,10 +374,47 @@ export default function BlockchainPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Shield className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                <p>Enter an evidence hash to verify</p>
-              </div>
+              {verifyResult ? (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-muted rounded-lg border">
+                    <div className="flex items-center space-x-2">
+                      {verifyResult.overall_verified ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <AlertCircle className="h-5 w-5 text-red-500" />
+                      )}
+                      <span className="font-semibold">
+                        Overall Status: {verifyResult.overall_verified ? 'Verified' : 'Unverified'}
+                      </span>
+                    </div>
+                    <Badge variant={verifyResult.multi_chain_consensus ? 'default' : 'secondary'}>
+                      Consensus: {verifyResult.multi_chain_consensus ? 'Achieved' : 'Pending'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium">Network Results</h4>
+                    {Object.entries(verifyResult.network_results).map(([network, data]: [string, any]) => (
+                      <div key={network} className="flex items-center justify-between border-b pb-2 text-sm">
+                        <div className="flex items-center space-x-2 capitalize">
+                          {getNetworkIcon(network)}
+                          <span>{network}</span>
+                        </div>
+                        {data.verified ? (
+                          <Badge variant="outline" className="text-green-600 bg-green-50 border-green-200">Verified</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-red-600 bg-red-50 border-red-200">Failed</Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Shield className="mx-auto h-12 w-12 mb-4 opacity-50" />
+                  <p>Enter an evidence hash to verify</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

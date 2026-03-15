@@ -672,3 +672,52 @@ export async function updateControlStatus(engagementId: string, controlId: strin
         body: JSON.stringify(payload),
     })
 }
+
+// ─── Multi-Chain Blockchain ──────────────────────────────────────────────────
+
+export interface NetworkStatus {
+    connected: boolean
+    network: string
+    block_number?: number
+    gas_price?: string
+    network_id?: number
+    latest_block_hash?: string
+    error?: string
+}
+
+export interface AnchoredEvidence {
+    id?: string
+    evidence_hash: string
+    networks_anchored: string[]
+    timestamp?: string
+    anchoring_timestamp?: string
+    verification_urls?: Record<string, string>
+    multi_chain_hash: string
+}
+
+export async function getMultiChainStatus(): Promise<Record<string, NetworkStatus>> {
+    try {
+        return await apiFetch<Record<string, NetworkStatus>>(`/api/v1/multi-chain/networks/status`)
+    } catch {
+        return {}
+    }
+}
+
+export async function getAnchoredEvidence(): Promise<{ anchored_evidence: AnchoredEvidence[] }> {
+    try {
+        return await apiFetch<{ anchored_evidence: AnchoredEvidence[] }>(`/api/v1/multi-chain/anchored/evidence`)
+    } catch {
+        return { anchored_evidence: [] }
+    }
+}
+
+export async function anchorMultiChainEvidence(hash: string, metadata: any = {}): Promise<AnchoredEvidence> {
+    return apiFetch<AnchoredEvidence>(`/api/v1/multi-chain/anchor`, {
+        method: 'POST',
+        body: JSON.stringify({ evidence_hash: hash, metadata }),
+    })
+}
+
+export async function verifyMultiChainEvidence(hash: string): Promise<any> {
+    return apiFetch<any>(`/api/v1/multi-chain/verify/${hash}`)
+}
