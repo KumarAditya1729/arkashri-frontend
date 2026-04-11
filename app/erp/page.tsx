@@ -352,6 +352,7 @@ export default function ERPPage() {
           </CardContent>
         </Card>
       </div>
+    </div>
     </AuditShell>
   )
 }

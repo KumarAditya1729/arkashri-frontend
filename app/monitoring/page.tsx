@@ -473,6 +473,6 @@ export default function MonitoringPage() {
         </TabsContent>
       </Tabs>
     </div>
-  </AuditShell>
-)
+    </AuditShell>
+  )
 }

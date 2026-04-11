@@ -423,6 +423,6 @@ export default function BlockchainPage() {
         </TabsContent>
       </Tabs>
     </div>
-  </AuditShell>
-)
+    </AuditShell>
+  )
 }

@@ -424,6 +424,6 @@ export default function AnalyticsPage() {
         </TabsContent>
       </Tabs>
     </div>
-  </AuditShell>
-)
+    </AuditShell>
+  )
 }
