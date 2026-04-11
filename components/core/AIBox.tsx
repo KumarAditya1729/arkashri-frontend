@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuditStore } from '../../store/auditStore'
-import { Bot, Info, Crosshair, ExternalLink, Activity, Loader2 } from 'lucide-react'
+import { Bot, Info, Crosshair, ExternalLink, Activity, Loader2, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -22,6 +22,8 @@ export function AIBox() {
 
     const [insight, setInsight] = useState<ContextInsight | null>(null)
     const [loading, setLoading] = useState(false)
+    const [showJustification, setShowJustification] = useState(false)
+    const [justificationText, setJustificationText] = useState('')
 
     useEffect(() => {
         if (!engagementId) return;
@@ -124,9 +126,29 @@ export function AIBox() {
                                 </>
                             )}
                         </div>
-                        <div className="bg-white px-4 py-3 border-t flex justify-end gap-2">
-                            <Button variant="ghost" size="sm" className="text-gray-500" disabled={loading || !insight} onClick={() => console.log('AI suggestion dismissed')}>Dismiss</Button>
-                            <Button size="sm" className="bg-[#002776] hover:bg-[#001f5c]" disabled={loading || !insight} onClick={() => console.log('AI action applied')}>Apply Action</Button>
+                        
+                        <div className="bg-white px-4 py-3 border-t flex flex-col gap-3">
+                            {showJustification ? (
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold text-red-600 uppercase tracking-widest flex items-center gap-1"><ShieldAlert className="w-3 h-3"/> Mandatory Human Justification (SA 200)</label>
+                                    <textarea 
+                                        className="w-full text-xs p-2 border border-red-200 rounded-md focus:ring-red-500 focus:border-red-500" 
+                                        rows={3} 
+                                        placeholder="Auditor notes validating the AI suggestion..."
+                                        value={justificationText}
+                                        onChange={(e) => setJustificationText(e.target.value)}
+                                    />
+                                    <div className="flex justify-end gap-2 mt-2">
+                                        <Button variant="ghost" size="sm" className="text-gray-500 text-xs h-7" onClick={() => setShowJustification(false)}>Cancel</Button>
+                                        <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white text-xs h-7 font-bold" disabled={justificationText.length < 10} onClick={() => { console.log('Logged:', justificationText); setShowJustification(false); setJustificationText(''); }}>Sign Workflow</Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="flex justify-end gap-2">
+                                    <Button variant="ghost" size="sm" className="text-gray-500" disabled={loading || !insight} onClick={() => console.log('AI suggestion dismissed')}>Dismiss</Button>
+                                    <Button size="sm" className="bg-[#002776] hover:bg-[#001f5c]" disabled={loading || !insight} onClick={() => setShowJustification(true)}>Apply Action</Button>
+                                </div>
+                            )}
                         </div>
                     </div>
 

@@ -176,53 +176,71 @@ export default function EvidencePage() {
                 ))}
             </div>
 
-            {/* Evidence list */}
-            <div className="grid grid-cols-1 gap-3">
-                {filtered.map(item => {
-                    const Icon = typeIcon[item.evidence_type] ?? FileText
-                    const statusCfg = statusConfig[item.ev_status] ?? statusConfig['Pending Review']
-                    const StatusIcon = statusCfg.icon
-                    const colorClass = typeColor[item.evidence_type] ?? typeColor.Document
-                    const isAnchoring = anchoringIds.has(item.id)
-                    const isAnchored = anchoredIds.has(item.id)
-
-                    return (
-                        <div key={item.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4 hover:shadow-md transition-shadow">
-                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${colorClass}`}>
-                                <Icon className="w-5 h-5" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="font-medium text-gray-900 text-sm truncate">{item.file_name}</div>
-                                <div className="text-xs text-gray-400 mt-0.5">
-                                    {item.evd_ref} · {item.test_ref ?? '—'} · {item.uploaded_by} · {item.uploaded_at?.slice(0, 10)}{item.file_size_kb ? ` · ${item.file_size_kb}` : ''}
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3 flex-shrink-0">
-                                {isAnchored ? (
-                                    <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded border border-indigo-200 bg-indigo-50 text-indigo-700 uppercase tracking-wider">
-                                        <ShieldCheck className="w-3 h-3 text-indigo-600" />
-                                        Evidex Anchored
-                                    </span>
-                                ) : (
-                                    <button 
-                                        onClick={() => handleAnchor(item)} 
-                                        disabled={isAnchoring}
-                                        className="text-xs font-semibold px-2 py-1 rounded border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 flex items-center gap-1 disabled:opacity-50"
-                                        title="Anchor to Blockchain via Evidex"
-                                    >
-                                        {isAnchoring ? <Loader2 className="w-3 h-3 animate-spin" /> : <Database className="w-3 h-3 text-gray-500" />}
-                                        Anchor
-                                    </button>
-                                )}
-
-                                <span className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${statusCfg.color}`}>
-                                    <StatusIcon className="w-3 h-3" />{item.ev_status}
-                                </span>
-                                <button onClick={() => handleDelete(item)} className="text-gray-400 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4" /></button>
-                            </div>
-                        </div>
-                    )
-                })}
+            {/* Evidence Hub Data Table (High Density) */}
+            <div className="bg-white border border-slate-200 text-sm max-w-full overflow-x-auto shadow-sm">
+                <table className="w-full text-left border-collapse">
+                    <thead className="bg-[#f8fafc] text-slate-600 border-b border-slate-200">
+                        <tr>
+                            <th className="py-2.5 px-4 font-semibold text-xs tracking-wider uppercase w-12 border-r border-slate-100/50"></th>
+                            <th className="py-2.5 px-4 font-semibold text-xs tracking-wider uppercase border-r border-slate-100/50">File Name</th>
+                            <th className="py-2.5 px-4 font-semibold text-xs tracking-wider uppercase whitespace-nowrap border-r border-slate-100/50">Details</th>
+                            <th className="py-2.5 px-4 font-semibold text-xs tracking-wider uppercase whitespace-nowrap text-right border-r border-slate-100/50">Immutability</th>
+                            <th className="py-2.5 px-4 font-semibold text-xs tracking-wider uppercase whitespace-nowrap text-right border-r border-slate-100/50">Review Status</th>
+                            <th className="py-2.5 px-4 w-12"></th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {filtered.map(item => {
+                            const Icon = typeIcon[item.evidence_type] ?? FileText
+                            const statusCfg = statusConfig[item.ev_status] ?? statusConfig['Pending Review']
+                            const StatusIcon = statusCfg.icon
+                            const colorClass = typeColor[item.evidence_type] ?? typeColor.Document
+                            const isAnchoring = anchoringIds.has(item.id)
+                            const isAnchored = anchoredIds.has(item.id)
+                            return (
+                                <tr key={item.id} className="hover:bg-slate-50 transition-colors group">
+                                    <td className="py-2.5 px-4 flex items-center justify-center">
+                                        <div className={`w-7 h-7 rounded border flex items-center justify-center flex-shrink-0 ${colorClass}`}>
+                                            <Icon className="w-4 h-4" />
+                                        </div>
+                                    </td>
+                                    <td className="py-2.5 px-4 font-medium text-slate-800 text-[13px] border-l-2 border-transparent group-hover:border-blue-500">
+                                        {item.file_name}
+                                    </td>
+                                    <td className="py-2.5 px-4 text-[11px] font-medium text-slate-500 min-w-[200px]">
+                                        <span className="text-slate-700 font-bold">{item.evd_ref}</span> • {item.uploaded_by} • {item.uploaded_at?.slice(0, 10)}
+                                    </td>
+                                    <td className="py-2.5 px-4 text-right">
+                                        {isAnchored ? (
+                                            <span className="inline-flex items-center gap-1.5 text-[10px] font-black px-2 py-0.5 rounded bg-slate-900 text-white uppercase tracking-wider shadow-sm">
+                                                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Anchored
+                                            </span>
+                                        ) : (
+                                            <button 
+                                                onClick={() => handleAnchor(item)} 
+                                                disabled={isAnchoring}
+                                                className="text-[10px] font-bold px-2 py-1 rounded border border-slate-300 bg-white text-slate-600 hover:bg-slate-200 hover:text-slate-900 uppercase disabled:opacity-50 transition-colors shadow-sm whitespace-nowrap"
+                                                title="Anchor to Blockchain"
+                                            >
+                                                {isAnchoring ? <Loader2 className="w-3 h-3 animate-spin mx-auto" /> : 'Anchor Hash'}
+                                            </button>
+                                        )}
+                                    </td>
+                                    <td className="py-2.5 px-4 text-right">
+                                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded ${statusCfg.color}`}>
+                                            {item.ev_status}
+                                        </span>
+                                    </td>
+                                    <td className="py-2.5 px-4 text-right">
+                                        <button onClick={() => handleDelete(item)} className="text-slate-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100">
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </td>
+                                </tr>
+                            )
+                        })}
+                    </tbody>
+                </table>
             </div>
         </AuditShell>
     )

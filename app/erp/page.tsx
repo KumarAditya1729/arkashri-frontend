@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plug, Database, CheckCircle, AlertCircle, Settings, RefreshCw, Activity, Link2, ShieldCheck, HardDrive } from 'lucide-react'
+import { Plug, Database, CheckCircle, AlertCircle, Settings, RefreshCw, Activity, Link2, ShieldCheck, HardDrive, UploadCloud } from 'lucide-react'
 import { AuditShell } from '@/components/layout/AuditShell'
 
 const erpSystems = [
@@ -53,6 +53,15 @@ const erpSystems = [
     lastSync: null,
     features: ['ERP/Financials', 'CRM', 'E-commerce'],
     icon: '☁️'
+  },
+  {
+    id: 'datadump',
+    name: 'Secure Data Dump',
+    description: 'CISO-friendly offline ingestion',
+    status: 'disconnected',
+    lastSync: null,
+    features: ['Air-gapped Upload', 'CSV/XML Parser', 'AES-256 Encrypted'],
+    icon: '🔒'
   }
 ]
 
@@ -125,7 +134,7 @@ export default function ERPPage() {
           <div className="xl:col-span-4 space-y-4">
             <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-4 px-1 flex items-center justify-between">
               Supported Platforms
-              <span className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-full">5 Available</span>
+              <span className="bg-blue-100 text-blue-800 text-[10px] px-2 py-0.5 rounded-full">6 Available</span>
             </h3>
             
             <div className="flex flex-col gap-3">
@@ -185,7 +194,7 @@ export default function ERPPage() {
                     <h2 className="text-2xl font-black text-gray-900">{selectedSystem.name}</h2>
                     <div className="flex items-center gap-2 mt-1">
                       {getStatusBadge(selectedSystem.status)}
-                      <span className="text-sm font-medium text-gray-500">API Gateway</span>
+                      <span className="text-sm font-medium text-gray-500">{selectedSystem.id === 'datadump' ? 'Manual File Drop' : 'API Gateway'}</span>
                     </div>
                   </div>
                 </div>
@@ -193,6 +202,11 @@ export default function ERPPage() {
                 {selectedSystem.status === 'connected' ? (
                   <Button variant="outline" className="text-[#002776] border-[#002776] hover:bg-blue-50 font-bold">
                     <RefreshCw className="w-4 h-4 mr-2" /> Force Sync
+                  </Button>
+                ) : selectedSystem.id === 'datadump' ? (
+                  <Button className="bg-[#002776] hover:bg-[#001a54] text-white font-bold shadow-md cursor-pointer border-none overflow-hidden relative group">
+                    <div className="absolute inset-0 bg-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="relative z-10 flex items-center">Open Upload Wizard <UploadCloud className="w-4 h-4 ml-2" /></span>
                   </Button>
                 ) : (
                   <Button className="bg-[#002776] hover:bg-[#001a54] text-white font-bold shadow-md">
@@ -203,6 +217,18 @@ export default function ERPPage() {
 
               {/* Tabs */}
               <div className="p-8 flex-1">
+                {selectedSystem.id === 'datadump' ? (
+                    <div className="flex flex-col items-center justify-center h-full border-2 border-dashed border-gray-200 rounded-2xl bg-gray-50 p-12">
+                         <div className="w-20 h-20 bg-white shadow-sm flex items-center justify-center rounded-2xl mb-6">
+                            <UploadCloud className="w-10 h-10 text-blue-500" />
+                         </div>
+                         <h3 className="text-2xl font-black text-gray-900 mb-2">Secure Air-Gapped Ingestion</h3>
+                         <p className="text-gray-500 text-center max-w-sm mb-8">Drag and drop encrypted General Ledger exports (CSV, XLSX, XML) to ingest strictly without API connections. Highly recommended for CISO-restricted corporate networks.</p>
+                         <Button className="bg-gray-900 text-white hover:bg-black font-bold h-12 px-8 rounded-xl">
+                            Select Local Files
+                         </Button>
+                    </div>
+                ) : (
                 <Tabs defaultValue="overview" className="w-full">
                   <TabsList className="bg-gray-100/80 p-1 rounded-xl w-full flex mb-8">
                     {['Overview', 'Authentication', 'Ingestion Rules', 'Analytics Logs'].map((tab, i) => (
@@ -326,6 +352,7 @@ export default function ERPPage() {
                     </div>
                   </TabsContent>
                 </Tabs>
+                )}
               </div>
             </div>
           </div>
