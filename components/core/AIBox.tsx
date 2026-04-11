@@ -70,30 +70,41 @@ export function AIBox() {
                     {/* Active Context */}
                     <div>
                         <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center">
-                                <Crosshair className="w-3 h-3 mr-1" /> Contextual Lens
+                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                                <Crosshair className="w-3.5 h-3.5 text-blue-500" /> Contextual Lens
                             </h3>
                         </div>
-                        <div className="p-3 bg-white border rounded-md text-sm shadow-sm font-medium">
-                            {contextTopic}: {auditType || 'Generic Engagement'}
+                        <div className="flex items-center gap-2 p-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-lg text-sm shadow-[inset_0_1px_2px_rgba(255,255,255,1)]">
+                            <div className="relative flex-shrink-0 flex items-center justify-center w-2 h-2">
+                                <div className="absolute w-full h-full bg-blue-500 rounded-full animate-ping opacity-75"></div>
+                                <div className="relative w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+                            </div>
+                            <span className="font-semibold text-blue-900 truncate text-[13px]">{contextTopic}</span>
+                            <span className="text-blue-300 flex-shrink-0 text-xs">•</span>
+                            <span className="text-blue-700 truncate text-[13px]">{auditType || 'Generic'}</span>
                         </div>
                     </div>
 
                     {/* Suggestion Card */}
-                    <div className="border border-indigo-100 rounded-lg bg-indigo-50/50 shadow-sm overflow-hidden">
-                        <div className="bg-indigo-100/50 px-3 py-2 border-b border-indigo-100 flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-indigo-800 uppercase">Grounded Suggestion</span>
+                    <div className="border border-indigo-100 rounded-xl bg-white shadow-sm overflow-hidden flex flex-col">
+                        <div className="bg-gradient-to-r from-indigo-50/80 to-purple-50/80 px-4 py-3 border-b border-indigo-100 flex flex-col gap-2.5">
+                            <div className="flex justify-between items-center w-full">
+                                <span className="text-[11px] font-black tracking-wider text-indigo-900 uppercase flex items-center gap-1.5">
+                                    <Bot className="w-3.5 h-3.5 text-indigo-500" />
+                                    Grounded Suggestion
+                                </span>
+                                <Badge variant="outline" className="text-[9px] font-bold text-indigo-600 bg-white border-indigo-200 uppercase tracking-widest px-1.5 py-0 shadow-sm">
+                                    GPT-4o
+                                </Badge>
+                            </div>
+                            <div className="w-full flex">
                                 <DisclaimerBadge aiConfidence={displayConfidence} />
                             </div>
-                            <Badge variant="outline" className="text-indigo-700 bg-white border-indigo-200">
-                                GPT-4o
-                            </Badge>
                         </div>
-                        <div className="p-4">
+                        <div className="p-4 bg-white">
                             {loading ? (
-                                <div className="flex items-center justify-center p-4 text-indigo-500">
-                                    <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                                <div className="flex items-center justify-center p-6 text-indigo-500">
+                                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
                                     <span className="text-sm font-medium">Analyzing Context...</span>
                                 </div>
                             ) : (
