@@ -48,6 +48,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
         sealHash: string | null
         sealedAt: string | null
         jurisdiction: string
+        standardsFramework: string
         createdAt: string | null
         isLive: true
     }
@@ -58,6 +59,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
         sealHash: null
         sealedAt: null
         jurisdiction: string
+        standardsFramework: string
         createdAt: null
         isLive: false
     }
@@ -77,6 +79,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
                     sealHash: liveEng.seal_hash,
                     sealedAt: liveEng.sealed_at,
                     jurisdiction: liveEng.jurisdiction,
+                    standardsFramework: liveEng.standards_framework,
                     createdAt: liveEng.created_at,
                     isLive: true,
                 }
@@ -133,8 +136,11 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
                         <span className="text-gray-400 font-mono text-xl ml-3">ENG-{shortId}</span>
                     </h1>
                     {engagementData.isLive && (
-                        <p className="text-sm text-gray-500 mt-1">
-                            {engagementData.jurisdiction} · Status: <span className="font-semibold text-gray-700">{engagementData.status}</span>
+                        <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-800 border border-neutral-200">
+                                🌍 {engagementData.jurisdiction} ({engagementData.standardsFramework})
+                            </span>
+                            <span>· Status: <span className="font-semibold text-gray-700">{engagementData.status}</span></span>
                         </p>
                     )}
 
@@ -203,7 +209,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
 function buildLocalFallback(
     shortId: string,
     entry: ReturnType<typeof registryByShortId>,
-): { auditType: string; clientName: string; status: string; sealHash: null; sealedAt: null; jurisdiction: string; createdAt: null; isLive: false } {
+): { auditType: string; clientName: string; status: string; sealHash: null; sealedAt: null; jurisdiction: string; standardsFramework: string; createdAt: null; isLive: false } {
     const local = LOCAL_REGISTRY[shortId] ?? DEFAULT_PLAYBOOK
     return {
         auditType: local.auditType,
@@ -212,6 +218,7 @@ function buildLocalFallback(
         sealHash: null,
         sealedAt: null,
         jurisdiction: entry?.jurisdiction ?? 'IN',
+        standardsFramework: 'ICAI_SA', // Default local metric
         createdAt: null,
         isLive: false,
     }

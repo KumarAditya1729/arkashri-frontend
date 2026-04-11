@@ -15,12 +15,14 @@ export default function SignInPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
+    const [acceptedTos, setAcceptedTos] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError('')
+        if (!acceptedTos) return setError('You must accept the Terms of Service to continue.')
         setLoading(true)
 
         try {
@@ -157,10 +159,24 @@ export default function SignInPage() {
                                 </div>
                             </div>
 
+                            <div className="flex items-start gap-2 mt-4">
+                                <input
+                                    type="checkbox"
+                                    id="tos"
+                                    required
+                                    checked={acceptedTos}
+                                    onChange={(e) => setAcceptedTos(e.target.checked)}
+                                    className="mt-1 w-4 h-4 rounded border-gray-300 text-[#002776] focus:ring-[#002776] cursor-pointer shrink-0"
+                                />
+                                <label htmlFor="tos" className="text-xs text-gray-600 leading-relaxed cursor-pointer">
+                                    I acknowledge Arkashri is an AI-assisted decision support system. I agree to the <Link href="/terms" className="text-[#002776] hover:underline font-semibold">Terms of Service</Link> and understand that all outputs require human review by a qualified professional before use in any compliance context.
+                                </label>
+                            </div>
+
                             <button
                                 id="sign-in-btn"
                                 type="submit"
-                                disabled={loading}
+                                disabled={loading || !acceptedTos}
                                 className="w-full h-11 bg-[#002776] hover:bg-[#001a54] text-white font-semibold rounded-lg text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
                             >
                                 {loading ? (

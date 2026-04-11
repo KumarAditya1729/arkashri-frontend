@@ -2,8 +2,8 @@
 
 import { AuditShell } from '@/components/layout/AuditShell'
 import { useState, useEffect } from 'react'
-import { ExternalLink, BookOpen, Bell, CheckCircle2, Clock, AlertTriangle, Filter, Loader2 } from 'lucide-react'
-import { getRegulatoryDocuments, promoteRegulatoryDoc, RegulatoryDoc } from '@/lib/api'
+import { ExternalLink, BookOpen, Bell, CheckCircle2, Clock, AlertTriangle, Filter, Loader2, GitCompare, X } from 'lucide-react'
+import { getRegulatoryDocuments, promoteRegulatoryDoc, diffRegulatoryDocs, RegulatoryDoc, RegulatoryDiffResponse } from '@/lib/api'
 
 const issuerColor: Record<string, string> = {
     ICAI: 'bg-blue-100 text-blue-800',
@@ -59,6 +59,11 @@ export default function RegulatoryUpdatesPage() {
     const [filterImpact, setFilterImpact] = useState<string>('All')
     const [expanded, setExpanded] = useState<string | number | null>('loc-1')
 
+    const [compareMode, setCompareMode] = useState(false)
+    const [selectedForDiff, setSelectedForDiff] = useState<number[]>([])
+    const [diffResult, setDiffResult] = useState<RegulatoryDiffResponse | null>(null)
+    const [loadingDiff, setLoadingDiff] = useState(false)
+
     useEffect(() => {
         setLoading(true)
         getRegulatoryDocuments('IN').then(data => {
@@ -77,6 +82,33 @@ export default function RegulatoryUpdatesPage() {
             setPromoting(null)
         }
         setDocs(ds => ds.map(d => d.id === doc.id ? { ...d, is_promoted: true } : d))
+    }
+
+    const handleSelectForDiff = (id: number) => {
+        if (selectedForDiff.includes(id)) {
+            setSelectedForDiff(prev => prev.filter(i => i !== id))
+        } else if (selectedForDiff.length < 2) {
+            setSelectedForDiff(prev => [...prev, id])
+        }
+    }
+
+    const runDiff = async () => {
+        if (selectedForDiff.length !== 2) return
+        setLoadingDiff(true)
+        try {
+            const res = await diffRegulatoryDocs(selectedForDiff[0], selectedForDiff[1])
+            setDiffResult(res)
+        } catch (err) {
+            console.error('Diff failed', err)
+        } finally {
+            setLoadingDiff(false)
+        }
+    }
+
+    const closeDiff = () => {
+        setDiffResult(null)
+        setSelectedForDiff([])
+        setCompareMode(false)
     }
 
     const filtered = docs
@@ -126,20 +158,66 @@ export default function RegulatoryUpdatesPage() {
                 ))}
             </div>
 
-            {/* Filters */}
-            <div className="flex items-center gap-3 mb-5 flex-wrap">
-                <Filter className="w-4 h-4 text-gray-400" />
-                <div className="flex gap-1">
-                    {['All', 'ICAI', 'SEBI', 'MCA', 'RBI', 'IASB', 'PCAOB'].map(f => (
-                        <button key={f} onClick={() => setFilterIssuer(f)} className={`text-xs font-semibold px-3 py-1 rounded-full border transition-all ${filterIssuer === f ? 'bg-[#002776] text-white border-[#002776]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>{f}</button>
-                    ))}
+            <div className="flex items-center gap-3 mb-5 flex-wrap justify-between">
+                <div className="flex items-center gap-3">
+                    <Filter className="w-4 h-4 text-gray-400" />
+                    <div className="flex gap-1">
+                        {['All', 'ICAI', 'SEBI', 'MCA', 'RBI', 'IASB', 'PCAOB'].map(f => (
+                            <button key={f} onClick={() => setFilterIssuer(f)} className={`text-xs font-semibold px-3 py-1 rounded-full border transition-all ${filterIssuer === f ? 'bg-[#002776] text-white border-[#002776]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>{f}</button>
+                        ))}
+                    </div>
+                    <div className="flex gap-1 ml-4">
+                        {['All', 'High', 'Medium', 'Low'].map(f => (
+                            <button key={f} onClick={() => setFilterImpact(f)} className={`text-xs font-semibold px-3 py-1 rounded-full border transition-all ${filterImpact === f ? 'bg-[#002776] text-white border-[#002776]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>{f}</button>
+                        ))}
+                    </div>
                 </div>
-                <div className="flex gap-1 ml-4">
-                    {['All', 'High', 'Medium', 'Low'].map(f => (
-                        <button key={f} onClick={() => setFilterImpact(f)} className={`text-xs font-semibold px-3 py-1 rounded-full border transition-all ${filterImpact === f ? 'bg-[#002776] text-white border-[#002776]' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>{f}</button>
-                    ))}
-                </div>
+                
+                <button
+                    onClick={() => { setCompareMode(!compareMode); setSelectedForDiff([]) }}
+                    className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border transition-all ${compareMode ? 'bg-orange-100 text-orange-800 border-orange-300' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                >
+                    <GitCompare className="w-4 h-4" />
+                    {compareMode ? 'Cancel Compare' : 'Compare Versions'}
+                </button>
             </div>
+
+            {compareMode && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4 flex items-center justify-between">
+                    <div className="text-sm text-orange-900">
+                        <span className="font-semibold">Compare Mode:</span> Select two documents to see what changed between them. ({selectedForDiff.length}/2 selected)
+                    </div>
+                    <button 
+                        disabled={selectedForDiff.length !== 2 || loadingDiff}
+                        onClick={runDiff}
+                        className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50 flex items-center gap-2"
+                    >
+                        {loadingDiff ? <Loader2 className="w-4 h-4 animate-spin" /> : <GitCompare className="w-4 h-4" />}
+                        Generate Diff
+                    </button>
+                </div>
+            )}
+
+            {/* Diff Modal */}
+            {diffResult && (
+                <div className="fixed inset-0 bg-gray-900/60 z-50 flex items-center justify-center p-6 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden">
+                        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+                            <h2 className="text-lg font-bold text-[#002776] flex items-center gap-2">
+                                <GitCompare className="w-5 h-5 text-gray-500" /> Regulatory Diff Generator
+                            </h2>
+                            <button onClick={closeDiff} className="p-2 hover:bg-gray-200 rounded-full text-gray-500 transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6 flex-1 overflow-auto bg-gray-900 text-green-400 font-mono text-xs leading-relaxed">
+                            <pre className="whitespace-pre-wrap">
+                                {diffResult.diff_text || "No structural textual changes detected. The documents appear identical."}
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Update cards */}
             <div className="space-y-3">
@@ -149,6 +227,15 @@ export default function RegulatoryUpdatesPage() {
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                        {compareMode && (
+                                            <input 
+                                                type="checkbox" 
+                                                checked={selectedForDiff.includes(typeof doc.id === 'number' ? doc.id : -1)}
+                                                onChange={() => typeof doc.id === 'number' && handleSelectForDiff(doc.id)}
+                                                disabled={!selectedForDiff.includes(typeof doc.id === 'number' ? doc.id : -1) && selectedForDiff.length >= 2 || typeof doc.id !== 'number'}
+                                                className="w-4 h-4 rounded border-gray-300 text-orange-600 focus:ring-orange-600"
+                                            />
+                                        )}
                                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${issuerColor[doc.issuer] ?? 'bg-gray-100 text-gray-700'}`}>{doc.issuer}</span>
                                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${impactColor[doc.impact] ?? impactColor.Low}`}>{doc.impact} Impact</span>
                                         {!doc.is_promoted && <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full flex items-center gap-1"><Clock className="w-3 h-3" />Unreviewed</span>}

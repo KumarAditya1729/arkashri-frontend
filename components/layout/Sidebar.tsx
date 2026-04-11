@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Briefcase, FileSearch, ShieldAlert, CheckSquare, Microscope, Link as LinkIcon, FileCheck, Eye, ScrollText, Brain, Network, Activity, BarChart3, Database } from 'lucide-react'
+import { LayoutDashboard, Briefcase, FileSearch, ShieldAlert, CheckSquare, Microscope, Link as LinkIcon, FileCheck, Eye, ScrollText, Brain, Network, Activity, BarChart3, Database, Plug } from 'lucide-react'
 
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -14,6 +14,7 @@ const navItems = [
     { href: '/evidence', label: 'Evidence', icon: LinkIcon },
     { href: '/review', label: 'Review', icon: Eye },
     { href: '/report', label: 'Report', icon: FileCheck },
+    { href: '/erp', label: 'ERP Integration', icon: Plug },
     { href: '/regulatory-updates', label: 'Regulatory Updates', icon: ScrollText },
     { href: '/analytics', label: 'ML Analytics', icon: Brain },
     { href: '/blockchain', label: 'Multi-Chain Blockchain', icon: Network },
