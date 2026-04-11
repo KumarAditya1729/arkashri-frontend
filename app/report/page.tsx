@@ -2,7 +2,7 @@
 
 import { AuditShell } from '@/components/layout/AuditShell'
 import { useState } from 'react'
-import { FileText, Download, CheckCircle2, AlertTriangle, Eye, Printer } from 'lucide-react'
+import { FileText, Download, CheckCircle2, AlertTriangle, Eye, Printer, Bot } from 'lucide-react'
 
 const execContent = `The audit of the entity for the specified period was conducted in accordance with Standards on Auditing (SAs) issued by the ICAI. Based on our procedures, we have identified relevant risks and key findings requiring management attention.
 
@@ -182,9 +182,14 @@ export default function ReportPage() {
                 <div className="flex-1 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
                     <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
                         <div>
-                            <h2 className="font-bold text-gray-900">{activeSection.title}</h2>
-                            <div className="text-xs text-gray-400 mt-0.5">
-                                {content[active]?.trim().split(/\s+/).filter(Boolean).length || 0} words
+                            <div className="flex items-center gap-3">
+                                <h2 className="font-bold text-gray-900">{activeSection.title}</h2>
+                                <span className="inline-flex items-center gap-1.5 text-[10px] font-black px-2 py-0.5 rounded border border-indigo-200 bg-indigo-50 text-indigo-700 uppercase tracking-wider shadow-sm">
+                                    <Bot className="w-3.5 h-3.5 text-indigo-500" /> Grounded Zero-Draft
+                                </span>
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                                Generated from Phase 4 Human Justification logs. {content[active]?.trim().split(/\s+/).filter(Boolean).length || 0} words total.
                             </div>
                         </div>
                         {activeSection.status === 'complete' && (

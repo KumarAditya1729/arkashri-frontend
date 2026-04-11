@@ -100,22 +100,33 @@ export default function ReviewPage() {
 
     return (
         <AuditShell>
-            <div className="mb-8">
-                <div className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wider">Audit Workflow</div>
-                <div className="flex items-center gap-2 mb-1">
-                    <h1 className="text-3xl font-black text-[#002776] tracking-tight">Quality Review</h1>
-                    {isLive ? (
-                        <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-800 border border-green-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />LIVE
-                        </span>
-                    ) : (
-                        <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />LOCAL
-                        </span>
-                    )}
-                    {loading && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
+            <div className="mb-8 flex justify-between items-start">
+                <div>
+                    <div className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wider">Audit Finalization</div>
+                    <div className="flex items-center gap-2 mb-1">
+                        <h1 className="text-3xl font-black text-[#002776] tracking-tight">Multi-Partner Cryptographic Seal</h1>
+                        {isLive ? (
+                            <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-800 border border-green-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />LIVE
+                            </span>
+                        ) : (
+                            <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />LOCAL
+                            </span>
+                        )}
+                        {loading && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
+                    </div>
+                    <p className="text-gray-500 mt-1 max-w-xl text-sm">Review zero-draft reports and immutability logs before applying dual-authorization digital signatures to permanently lock the workspace (Phase 6).</p>
                 </div>
-                <p className="text-gray-500 mt-1 text-sm">Maker-checker review of all workpapers before final sign-off.</p>
+                
+                <div className="flex gap-3">
+                    <button className="bg-white border border-gray-200 text-[#002776] font-bold text-sm px-4 py-2 rounded-lg hover:bg-blue-50 shadow-sm transition-colors">
+                        EQCR Sign-off
+                    </button>
+                    <button className="bg-[#002776] text-white font-bold text-sm px-4 py-2 rounded-lg hover:bg-[#001a54] shadow-md transition-colors flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4" /> Initiate Seal Session
+                    </button>
+                </div>
             </div>
 
             {/* Summary */}
