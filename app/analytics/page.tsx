@@ -70,6 +70,8 @@ interface PatternData {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
 
+import { AuditShell } from '@/components/layout/AuditShell'
+
 export default function AnalyticsPage() {
   const [anomalies, setAnomalies] = useState<AnomalyData[]>([])
   const [riskPredictions, setRiskPredictions] = useState<RiskPrediction[]>([])
@@ -183,8 +185,9 @@ export default function AnalyticsPage() {
   }))
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <AuditShell>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">ML Analytics Dashboard</h1>
           <p className="text-muted-foreground">
@@ -421,5 +424,6 @@ export default function AnalyticsPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  </AuditShell>
+)
 }

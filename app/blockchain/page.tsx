@@ -42,6 +42,8 @@ interface AnchoredEvidence {
   multiChainHash: string
 }
 
+import { AuditShell } from '@/components/layout/AuditShell'
+
 export default function BlockchainPage() {
   const [networks, setNetworks] = useState<Record<string, NetworkStatus>>({})
   const [anchoredEvidence, setAnchoredEvidence] = useState<AnchoredEvidence[]>([])
@@ -161,8 +163,9 @@ export default function BlockchainPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <AuditShell>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Multi-Chain Blockchain</h1>
           <p className="text-muted-foreground">
@@ -420,5 +423,6 @@ export default function BlockchainPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  </AuditShell>
+)
 }

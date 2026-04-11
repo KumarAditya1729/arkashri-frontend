@@ -64,6 +64,8 @@ const erpSystems = [
   }
 ]
 
+import { AuditShell } from '@/components/layout/AuditShell'
+
 export default function ERPPage() {
   const [selectedSystem, setSelectedSystem] = useState(erpSystems[0])
 
@@ -81,8 +83,9 @@ export default function ERPPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <AuditShell>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">ERP Integration</h1>
           <p className="text-gray-600 mt-2">Connect and manage your ERP systems for seamless data synchronization</p>
@@ -349,6 +352,6 @@ export default function ERPPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AuditShell>
   )
 }

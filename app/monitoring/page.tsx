@@ -65,6 +65,8 @@ interface ServiceHealth {
   lastCheck: string
 }
 
+import { AuditShell } from '@/components/layout/AuditShell'
+
 export default function MonitoringPage() {
   const [metrics, setMetrics] = useState<MetricData[]>([])
   const [pods, setPods] = useState<PodStatus[]>([])
@@ -228,8 +230,9 @@ export default function MonitoringPage() {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <AuditShell>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Production Monitoring</h1>
           <p className="text-muted-foreground">
@@ -470,5 +473,6 @@ export default function MonitoringPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  </AuditShell>
+)
 }
