@@ -37,8 +37,9 @@ export default function SignInPage() {
             router.push('/dashboard')
         } catch {
             setError('Authentication failed. Please check your credentials and backend connection.')
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     return (
