@@ -79,8 +79,8 @@ async function handleProxy(request: Request, path: string) {
             statusText: res.statusText,
             headers: responseHeaders,
         })
-    } catch (error) {
+    } catch (error: any) {
         console.error(`Proxy error for ${targetUrl}:`, error)
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })
+        return NextResponse.json({ error: 'Internal Server Error', proxy_target: targetUrl, error_message: error?.message || String(error) }, { status: 500 })
     }
 }
