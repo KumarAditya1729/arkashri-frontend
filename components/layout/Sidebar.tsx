@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, Briefcase, FileSearch, ShieldAlert, CheckSquare, Microscope, Link as LinkIcon, FileCheck, Eye, ScrollText, Brain, Network, Activity, BarChart3, Database, Plug } from 'lucide-react'
+import { APP_VERSION, APP_EDITION } from '@/lib/version'
 
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -47,7 +48,7 @@ export function Sidebar() {
                 })}
             </nav>
             <div className="p-4 border-t bg-gray-100">
-                <div className="text-xs text-gray-500 text-center">Enterprise Edition v2.0.0 ✅</div>
+                <div className="text-xs text-gray-500 text-center">{APP_EDITION} v{APP_VERSION} ✅</div>
             </div>
         </aside>
     )
