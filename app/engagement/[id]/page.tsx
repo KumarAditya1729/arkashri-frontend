@@ -181,8 +181,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
                 <PhaseApprovalGateway
                     currentPhase="Evidence Collection"
                     onApprove={async () => {
-                        'use server'
-                        console.log("Phase advanced via Server Action")
+                        console.log("Phase advanced")
                     }}
                 />
             </WidgetErrorBoundary>
