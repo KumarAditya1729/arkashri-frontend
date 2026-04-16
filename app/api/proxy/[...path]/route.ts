@@ -32,7 +32,10 @@ async function handleProxy(request: Request, path: string) {
     const searchParams = new URL(request.url).search
     
     // Normalize backend URL and handle if it already includes /api/v1
-    const baseUrl = BACKEND_URL.replace(/\/+$/, '')
+    let baseUrl = BACKEND_URL.replace(/\/+$/, '')
+    if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+        baseUrl = `https://${baseUrl}`
+    }
     let targetUrl: string
     
     if (baseUrl.endsWith('/api/v1')) {
