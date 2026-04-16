@@ -17,32 +17,36 @@ export default async function EngagementLayout({
     let meta = registryByShortId(id)
 
     if (!meta && id.includes('-')) {
-        const cookieStore = await cookies()
-        const token = cookieStore.get('arkashri_token')?.value
+        try {
+            const cookieStore = await cookies()
+            const token = cookieStore.get('arkashri_token')?.value
 
-        let baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
-        baseUrl = baseUrl.replace(/\/+$/, '')
-        if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
-            baseUrl = `https://${baseUrl}`
-        }
-
-        const res = await fetch(`${baseUrl}/api/v1/engagements/engagements/${id}`, {
-            headers: {
-                'Authorization': token ? `Bearer ${token}` : '',
-                'X-Arkashri-Tenant': process.env.NEXT_PUBLIC_API_TENANT ?? 'default_tenant'
+            let baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+            baseUrl = baseUrl.replace(/\/+$/, '')
+            if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+                baseUrl = `https://${baseUrl}`
             }
-        }).catch(() => null)
 
-        if (res && res.ok) {
-            const liveEng = await res.json()
-            meta = {
-                shortId: id.substring(0, 8),
-                uuid: id,
-                auditType: liveEng.engagement_type,
-                client: liveEng.client_name,
-                jurisdiction: liveEng.jurisdiction,
-                period: 'LIVE RECORD'
+            const res = await fetch(`${baseUrl}/api/v1/engagements/engagements/${id}`, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'X-Arkashri-Tenant': process.env.NEXT_PUBLIC_API_TENANT ?? 'default_tenant'
+                }
+            })
+
+            if (res.ok) {
+                const liveEng = await res.json()
+                meta = {
+                    shortId: id.substring(0, 8),
+                    uuid: id,
+                    auditType: liveEng.engagement_type,
+                    client: liveEng.client_name,
+                    jurisdiction: liveEng.jurisdiction,
+                    period: 'LIVE RECORD'
+                }
             }
+        } catch (e) {
+            console.error('Layout SSR Fetch Error:', e)
         }
     }
 
