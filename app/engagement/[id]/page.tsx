@@ -179,7 +179,13 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
 
             <WidgetErrorBoundary fallback={<div className="font-mono text-red-500 bg-red-50 p-4 border border-red-200">System Error: Gateway offline.</div>}>
                 <PhaseApprovalGateway
-                    currentPhase="Evidence Collection"
+                    currentPhase={
+                        engagementData.status === 'ACCEPTED' ? 'Planning & Risk Assessment' :
+                        engagementData.status === 'IN_PROGRESS' ? 'Evidence Collection' :
+                        engagementData.status === 'UNDER_REVIEW' ? 'Independent Review' :
+                        engagementData.status === 'SEALED' ? 'Report Issuance & Sign-off' :
+                        'Evidence Collection'
+                    }
                     onApprove={async () => {
                         console.log("Phase advanced")
                     }}

@@ -495,7 +495,7 @@ export async function createSealSession(
     requiredSignatures = 2,
     createdBy = 'system',
 ): Promise<SealSessionOut> {
-    return apiFetch<SealSessionOut>(`/v1/engagements/${engagementUuid}/seal-session`, {
+    return apiFetch<SealSessionOut>(`/api/v1/engagements/${engagementUuid}/seal-session`, {
         method: 'POST',
         body: JSON.stringify({ required_signatures: requiredSignatures, created_by: createdBy }),
     })
@@ -503,7 +503,7 @@ export async function createSealSession(
 
 export async function getSealSession(engagementUuid: string): Promise<SealSessionOut | null> {
     try {
-        return await apiFetch<SealSessionOut>(`/v1/engagements/${engagementUuid}/seal-session`)
+        return await apiFetch<SealSessionOut>(`/api/v1/engagements/${engagementUuid}/seal-session`)
     } catch {
         return null
     }
@@ -511,7 +511,7 @@ export async function getSealSession(engagementUuid: string): Promise<SealSessio
 
 export async function getPreSignSummary(sessionId: string): Promise<PreSignSummary | null> {
     try {
-        return await apiFetch<PreSignSummary>(`/v1/seal-sessions/${sessionId}/pre-sign-summary`)
+        return await apiFetch<PreSignSummary>(`/api/v1/seal-sessions/${sessionId}/pre-sign-summary`)
     } catch {
         return null
     }
@@ -526,7 +526,7 @@ export async function signSealSession(
     overrideCountAcknowledged = 0,
     jurisdiction = 'IN',
 ): Promise<SealSessionOut> {
-    return apiFetch<SealSessionOut>(`/v1/seal-sessions/${sessionId}/sign`, {
+    return apiFetch<SealSessionOut>(`/api/v1/seal-sessions/${sessionId}/sign`, {
         method: 'POST',
         body: JSON.stringify({
             partner_user_id: partnerUserId,
@@ -544,13 +544,13 @@ export async function withdrawSignature(
     signatureId: string,
     withdrawalReason: string,
 ): Promise<SealSessionOut> {
-    return apiFetch<SealSessionOut>(`/v1/seal-sessions/${sessionId}/signatures/${signatureId}`, {
+    return apiFetch<SealSessionOut>(`/api/v1/seal-sessions/${sessionId}/signatures/${signatureId}`, {
         method: 'DELETE',
         body: JSON.stringify({ withdrawal_reason: withdrawalReason }),
     })
 }
 export async function getAdminEvidenceLedger(): Promise<EvidenceLedgerEntry[]> {
-    return apiFetch<EvidenceLedgerEntry[]>("/v1/admin/evidence-ledger");
+    return apiFetch<EvidenceLedgerEntry[]>("/api/v1/admin/evidence-ledger");
 }
 
 // ─── Planning Types ───────────────────────────────────────────────────────────
@@ -669,19 +669,19 @@ export interface ControlStatusUpdate {
 
 export async function listControls(engagementId: string): Promise<ControlOut[]> {
     try {
-        return await apiFetch<ControlOut[]>(`/api/v1/controls/engagements/${engagementId}/controls`)
+        return await apiFetch<ControlOut[]>(`/api/v1/engagements/${engagementId}/controls`)
     } catch { return [] }
 }
 
 export async function createControl(engagementId: string, payload: ControlCreate): Promise<ControlOut> {
-    return apiFetch<ControlOut>(`/api/v1/controls/engagements/${engagementId}/controls`, {
+    return apiFetch<ControlOut>(`/api/v1/engagements/${engagementId}/controls`, {
         method: 'POST',
         body: JSON.stringify(payload),
     })
 }
 
 export async function updateControlStatus(engagementId: string, controlId: string, payload: ControlStatusUpdate): Promise<ControlOut> {
-    return apiFetch<ControlOut>(`/api/v1/controls/engagements/${engagementId}/controls/${controlId}`, {
+    return apiFetch<ControlOut>(`/api/v1/engagements/${engagementId}/controls/${controlId}`, {
         method: 'PATCH',
         body: JSON.stringify(payload),
     })
