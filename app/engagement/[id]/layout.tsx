@@ -12,7 +12,22 @@ export default async function EngagementLayout({
     params: Promise<{ id: string }>
 }) {
     const { id } = await params
-    const meta = registryByShortId(id)
+    let meta = registryByShortId(id)
+
+    if (!meta && id.includes('-')) {
+        const { getEngagement } = await import('@/lib/api')
+        const liveEng = await getEngagement(id).catch(() => null)
+        if (liveEng) {
+            meta = {
+                shortId: id.substring(0, 8),
+                uuid: id,
+                auditType: liveEng.engagement_type,
+                client: liveEng.client_name,
+                jurisdiction: liveEng.jurisdiction,
+                period: 'LIVE RECORD'
+            }
+        }
+    }
 
     if (!meta) {
         notFound()

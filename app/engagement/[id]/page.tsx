@@ -38,7 +38,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
 
     // 1. Look up UUID from registry
     const registryEntry = registryByShortId(shortId)
-    const uuid = registryEntry?.uuid ?? null
+    const uuid = registryEntry?.uuid ?? (shortId.includes('-') && shortId.length >= 32 ? shortId : null)
 
     // 2. Try to fetch live data from the backend
     type LiveData = {
