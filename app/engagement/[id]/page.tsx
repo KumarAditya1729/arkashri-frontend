@@ -6,6 +6,7 @@ import { AuditCompletionEstimator } from '@/components/audit/AuditCompletionEsti
 import PartnerSignOff from '@/components/audit/PartnerSignOff'
 import { getEngagement } from '@/lib/api'
 import { registryByShortId } from '@/lib/engagementRegistry'
+import { cookies } from 'next/headers'
 
 // ─── Local fallback registry ──────────────────────────────────────────────────
 // Used when the backend is unavailable or the engagement is not yet seeded.
@@ -69,7 +70,6 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
 
     if (uuid) {
         try {
-            const { cookies } = await import('next/headers')
             const cookieStore = await cookies()
             const token = cookieStore.get('arkashri_token')?.value
 

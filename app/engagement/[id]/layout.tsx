@@ -4,6 +4,7 @@ import { EngagementStepper } from '@/components/audit/EngagementStepper'
 import { registryByShortId } from '@/lib/engagementRegistry'
 import { notFound } from 'next/navigation'
 import { EngagementStateInitializer } from '@/components/audit/EngagementStateInitializer'
+import { cookies } from 'next/headers'
 
 export default async function EngagementLayout({
     children,
@@ -16,7 +17,6 @@ export default async function EngagementLayout({
     let meta = registryByShortId(id)
 
     if (!meta && id.includes('-')) {
-        const { cookies } = await import('next/headers')
         const cookieStore = await cookies()
         const token = cookieStore.get('arkashri_token')?.value
 
