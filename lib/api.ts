@@ -16,7 +16,7 @@ function getBaseUrl() {
     if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/api/proxy`
     return 'http://localhost:3000/api/proxy'
 }
-const BASE_URL = getBaseUrl()
+// Intentionally no top-level BASE_URL constant — evaluated lazily per call to prevent SSR/client split-brain
 const TENANT = process.env.NEXT_PUBLIC_API_TENANT ?? 'default_tenant'
 
 // Secure token management is handled server-side in /app/api/auth/login/route.ts
@@ -35,6 +35,7 @@ function buildHeaders(extra: Record<string, string> = {}): Record<string, string
 const RETRY_DELAYS_MS = [500, 1000, 2000] // 3 attempts, exponential backoff
 
 export async function apiFetch<T>(path: string, init?: RequestInit, _attempt = 0): Promise<T> {
+    const BASE_URL = getBaseUrl()
     const isFormData = init?.body instanceof FormData
     const h = isFormData
         ? { 'X-Arkashri-Tenant': TENANT }
