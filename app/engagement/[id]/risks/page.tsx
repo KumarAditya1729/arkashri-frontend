@@ -149,13 +149,13 @@ export default function RisksPage({ params }: { params: Promise<{ id: string }> 
                         <div>
                             <label className="text-xs font-semibold text-gray-600 mb-1 block">Likelihood</label>
                             <select value={newRisk.likelihood} onChange={e => setNewRisk(n => ({ ...n, likelihood: e.target.value as RiskLikelihood }))} className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none">
-                                {['High', 'Medium', 'Low'].map(v => <option key={v}>{v}</option>)}
+                                {['High', 'Medium', 'Low'].map(v => <option key={v} value={v}>{v}</option>)}
                             </select>
                         </div>
                         <div>
                             <label className="text-xs font-semibold text-gray-600 mb-1 block">Impact</label>
                             <select value={newRisk.impact} onChange={e => setNewRisk(n => ({ ...n, impact: e.target.value as RiskImpact }))} className="w-full h-9 px-3 rounded-lg border border-gray-200 text-sm focus:outline-none">
-                                {['Critical', 'High', 'Medium', 'Low'].map(v => <option key={v}>{v}</option>)}
+                                {['Critical', 'High', 'Medium', 'Low'].map(v => <option key={v} value={v}>{v}</option>)}
                             </select>
                         </div>
                     </div>

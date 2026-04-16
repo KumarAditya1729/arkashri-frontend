@@ -40,7 +40,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
     const connectWs = useCallback((auth: boolean) => {
         if (!auth || !mountedRef.current) return
-        if (socketRef.current?.readyState === WebSocket.OPEN) return
+        if (socketRef.current?.readyState === WebSocket.OPEN || socketRef.current?.readyState === WebSocket.CONNECTING) return
 
         const currentUser = useAuthStore.getState().user
         if (!currentUser) return

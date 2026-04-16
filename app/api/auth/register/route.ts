@@ -5,10 +5,14 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
 export async function POST(request: Request) {
     try {
+        let baseUrl = BACKEND_URL.replace(/\/+$/, '')
+        if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+            baseUrl = `https://${baseUrl}`
+        }
         const body = await request.json()
         const { fullName, email, password, organisation, role } = body
 
-        const res = await fetch(`${BACKEND_URL}/api/v1/auth/register`, {
+        const res = await fetch(`${baseUrl}/api/v1/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

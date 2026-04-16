@@ -1,7 +1,6 @@
 import { AuditShell } from '@/components/layout/AuditShell'
 import { PlaybookRenderer } from '@/components/audit/PlaybookRenderer'
 import { PhaseApprovalGateway } from '@/components/audit/PhaseApprovalGateway'
-import { EngagementStateInitializer } from '@/components/audit/EngagementStateInitializer'
 import { WidgetErrorBoundary } from '@/components/layout/WidgetErrorBoundary'
 import { AuditCompletionEstimator } from '@/components/audit/AuditCompletionEstimator'
 import PartnerSignOff from '@/components/audit/PartnerSignOff'
@@ -102,8 +101,6 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
 
     return (
         <AuditShell>
-            <EngagementStateInitializer engagementId={shortId} auditType={engagementData.auditType} />
-
             <div className="mb-8 flex justify-between items-start">
                 <div>
                     <div className="text-sm font-semibold text-gray-500 mb-2">ENGAGEMENT COMMAND CENTER</div>

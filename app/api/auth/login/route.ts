@@ -9,7 +9,10 @@ export async function POST(request: Request) {
         const { email, password } = body
 
         // Gracefully handle if NEXT_PUBLIC_API_URL includes /api/v1 or trailing slashes
-        const baseUrl = BACKEND_URL.replace(/\/+$/, '')
+        let baseUrl = BACKEND_URL.replace(/\/+$/, '')
+        if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+            baseUrl = `https://${baseUrl}`
+        }
         const targetUrl = baseUrl.endsWith('/api/v1') 
             ? `${baseUrl}/token/` 
             : `${baseUrl}/api/v1/token/`

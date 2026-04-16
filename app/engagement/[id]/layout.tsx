@@ -3,6 +3,7 @@ import { AuditShell } from '@/components/layout/AuditShell'
 import { EngagementStepper } from '@/components/audit/EngagementStepper'
 import { registryByShortId } from '@/lib/engagementRegistry'
 import { notFound } from 'next/navigation'
+import { EngagementStateInitializer } from '@/components/audit/EngagementStateInitializer'
 
 export default async function EngagementLayout({
     children,
@@ -73,6 +74,7 @@ export default async function EngagementLayout({
                     </div>
                 </div>
 
+                <EngagementStateInitializer engagementId={meta.uuid ?? id} auditType={meta.auditType} />
                 <EngagementStepper engagementId={id} />
             </div>
 

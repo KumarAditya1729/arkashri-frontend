@@ -306,16 +306,25 @@ export async function getRisks(engagementUuid: string): Promise<RiskResponse[]> 
 }
 
 export async function createRisk(engagementUuid: string, payload: RiskCreate): Promise<RiskResponse> {
+    const backendPayload = {
+        ...payload,
+        likelihood: payload.likelihood.toUpperCase(),
+        impact: payload.impact.toUpperCase(),
+    }
     return apiFetch<RiskResponse>(`/api/v1/engagements/${engagementUuid}/risks`, {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body: JSON.stringify(backendPayload),
     })
 }
 
 export async function updateRiskStatus(engagementUuid: string, riskId: string, status: RiskStatus): Promise<RiskResponse> {
+    let backendStatus = status
+    if (status === 'In Review') backendStatus = 'IN_REVIEW' as RiskStatus
+    else backendStatus = status.toUpperCase() as RiskStatus
+
     return apiFetch<RiskResponse>(`/api/v1/engagements/${engagementUuid}/risks/${riskId}`, {
         method: 'PATCH',
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status: backendStatus }),
     })
 }
 
@@ -582,12 +591,12 @@ export interface TeamMemberCreate {
 // Planning API
 export async function listPhases(engagementId: string): Promise<PhaseOut[]> {
     try {
-        return await apiFetch<PhaseOut[]>(`/api/v1/planning/engagements/${engagementId}/phases`)
+        return await apiFetch<PhaseOut[]>(`/api/v1/engagements/${engagementId}/phases`)
     } catch { return [] }
 }
 
 export async function createPhase(engagementId: string, payload: PhaseCreate): Promise<PhaseOut> {
-    return apiFetch<PhaseOut>(`/api/v1/planning/engagements/${engagementId}/phases`, {
+    return apiFetch<PhaseOut>(`/api/v1/engagements/${engagementId}/phases`, {
         method: 'POST',
         body: JSON.stringify(payload),
     })
@@ -595,7 +604,7 @@ export async function createPhase(engagementId: string, payload: PhaseCreate): P
 
 export async function listTeamMembers(engagementId: string): Promise<TeamMemberOut[]> {
     try {
-        return await apiFetch<TeamMemberOut[]>(`/api/v1/planning/engagements/${engagementId}/team`)
+        return await apiFetch<TeamMemberOut[]>(`/api/v1/engagements/${engagementId}/team`)
     } catch { return [] }
 }
 
@@ -616,7 +625,7 @@ export async function listAuditRuns(engagementId: string): Promise<AuditRunOut[]
 }
 
 export async function addTeamMember(engagementId: string, payload: TeamMemberCreate): Promise<TeamMemberOut> {
-    return apiFetch<TeamMemberOut>(`/api/v1/planning/engagements/${engagementId}/team`, {
+    return apiFetch<TeamMemberOut>(`/api/v1/engagements/${engagementId}/team`, {
         method: 'POST',
         body: JSON.stringify(payload),
     })
