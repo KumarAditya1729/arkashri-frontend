@@ -47,7 +47,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
         const tenantId = currentUser.organisation === 'Arkashri Systems' ? 'default_tenant' : currentUser.id
         const jurisdiction = 'IN'
-        const wsUrl = `${process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8001'}/ws/audit/${tenantId}/${jurisdiction}`
+        const wsBase = (process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8001').replace(/\/+$/, '').replace(/\/ws$/, '')
+        const wsUrl = `${wsBase}/ws/audit/${tenantId}/${jurisdiction}`
 
         console.log(`Connecting to WebSocket: ${wsUrl}`)
 
