@@ -38,13 +38,18 @@ const auditTypeIcons: Record<string, string> = {
     'Performance Audit': '📈',
     'Quality Audit': '🎯',
     'Environmental Audit': '♻️',
+    'Cost Audit (CRA-3)': '💳',
+    'Social Audit': '🤝',
+    'Inventory Audit': '📦',
+    'Single Audit (US Federal / USAS)': '🏛️',
 }
 
 const AUDIT_TYPES = [
     'Financial Audit', 'Forensic Audit', 'Internal Audit', 'Statutory Audit',
     'Tax Audit', 'Compliance Audit', 'ESG Audit', 'External Audit',
     'Operational Audit', 'IT Audit', 'Payroll Audit', 'Performance Audit',
-    'Quality Audit', 'Environmental Audit',
+    'Quality Audit', 'Environmental Audit', 'Cost Audit (CRA-3)',
+    'Social Audit', 'Inventory Audit', 'Single Audit (US Federal / USAS)',
 ]
 
 const JURISDICTIONS = [

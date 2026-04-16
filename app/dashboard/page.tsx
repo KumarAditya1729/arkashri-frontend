@@ -39,6 +39,10 @@ const auditIcons: Record<string, string> = {
     'Performance Audit': '📈',
     'Quality Audit': '🎯',
     'Environmental Audit': '♻️',
+    'Cost Audit (CRA-3)': '💳',
+    'Social Audit': '🤝',
+    'Inventory Audit': '📦',
+    'Single Audit (US Federal / USAS)': '🏛️',
 }
 
 export default function Dashboard() {
