@@ -69,8 +69,25 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
 
     if (uuid) {
         try {
-            const liveEng = await getEngagement(uuid)
-            if (liveEng) {
+            const { cookies } = await import('next/headers')
+            const cookieStore = await cookies()
+            const token = cookieStore.get('arkashri_token')?.value
+
+            let baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+            baseUrl = baseUrl.replace(/\/+$/, '')
+            if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+                baseUrl = `https://${baseUrl}`
+            }
+
+            const res = await fetch(`${baseUrl}/api/v1/engagements/engagements/${uuid}`, {
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                    'X-Arkashri-Tenant': process.env.NEXT_PUBLIC_API_TENANT ?? 'default_tenant'
+                }
+            })
+
+            if (res.ok) {
+                const liveEng = await res.json()
                 engagementData = {
                     auditType: liveEng.engagement_type,
                     clientName: liveEng.client_name,
@@ -83,7 +100,6 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
                     isLive: true,
                 }
             } else {
-                // 404 — not yet seeded
                 fetchError = 'Engagement not found in DB. Run seed_engagements.py.'
                 engagementData = buildLocalFallback(shortId, registryEntry)
             }

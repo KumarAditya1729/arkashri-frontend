@@ -11,7 +11,12 @@
  *   - Cleared on sign-out
  */
 
-const BASE_URL = '/api/proxy'
+function getBaseUrl() {
+    if (typeof window !== 'undefined') return '/api/proxy'
+    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/api/proxy`
+    return 'http://localhost:3000/api/proxy'
+}
+const BASE_URL = getBaseUrl()
 const TENANT = process.env.NEXT_PUBLIC_API_TENANT ?? 'default_tenant'
 
 // Secure token management is handled server-side in /app/api/auth/login/route.ts

@@ -16,9 +16,25 @@ export default async function EngagementLayout({
     let meta = registryByShortId(id)
 
     if (!meta && id.includes('-')) {
-        const { getEngagement } = await import('@/lib/api')
-        const liveEng = await getEngagement(id).catch(() => null)
-        if (liveEng) {
+        const { cookies } = await import('next/headers')
+        const cookieStore = await cookies()
+        const token = cookieStore.get('arkashri_token')?.value
+
+        let baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+        baseUrl = baseUrl.replace(/\/+$/, '')
+        if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
+            baseUrl = `https://${baseUrl}`
+        }
+
+        const res = await fetch(`${baseUrl}/api/v1/engagements/engagements/${id}`, {
+            headers: {
+                'Authorization': token ? `Bearer ${token}` : '',
+                'X-Arkashri-Tenant': process.env.NEXT_PUBLIC_API_TENANT ?? 'default_tenant'
+            }
+        }).catch(() => null)
+
+        if (res && res.ok) {
+            const liveEng = await res.json()
             meta = {
                 shortId: id.substring(0, 8),
                 uuid: id,
