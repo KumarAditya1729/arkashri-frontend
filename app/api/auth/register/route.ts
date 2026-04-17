@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+const BACKEND_URL = process.env.API_URL ?? 'http://localhost:8000'
 
 export async function POST(request: Request) {
     try {
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
         cookieStore.set('arkashri_token', access_token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            sameSite: 'lax',  // 'strict' breaks OAuth redirects and external navigations
             path: '/',
             maxAge: 60 * 60 * 24, // 24 hours
         })
