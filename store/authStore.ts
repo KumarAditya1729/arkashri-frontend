@@ -33,7 +33,7 @@ export const useAuthStore = create<AuthState>()(
             login: (user) => set({ user, isAuthenticated: true, backendLinked: false }),
             loginWithBackend: async (email, password, fallbackUser) => {
                 try {
-                    const res = await apiSignIn(email, password)
+                    const res = await apiSignIn(email, password) as any
                     // Token is set automatically via HttpOnly cookie in /api/auth/login
                     set({
                         isAuthenticated: true,
