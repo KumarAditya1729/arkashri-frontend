@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
 import { useAuthStore } from '../../store/authStore'
+import { apiFetch } from '@/lib/api'
 
 interface WebSocketContextType {
     isConnected: boolean
@@ -38,7 +39,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         }, delay)
     }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-    const connectWs = useCallback((auth: boolean) => {
+    const connectWs = useCallback(async (auth: boolean) => {
         if (!auth || !mountedRef.current) return
         if (socketRef.current?.readyState === WebSocket.OPEN || socketRef.current?.readyState === WebSocket.CONNECTING) return
 
@@ -48,7 +49,20 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         const tenantId = currentUser.organisation === 'Arkashri Systems' ? 'default_tenant' : currentUser.id
         const jurisdiction = 'IN'
         const wsBase = (process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8001').replace(/\/+$/, '').replace(/\/ws$/, '')
-        const wsUrl = `${wsBase}/ws/audit/${tenantId}/${jurisdiction}`
+
+        let ticket = ''
+        try {
+            const ticketRes = await apiFetch<{ ticket: string }>(`/api/v1/token/ws-ticket?jurisdiction=${jurisdiction}`, {
+                method: 'POST'
+            })
+            ticket = ticketRes.ticket
+        } catch (err) {
+            console.error('Failed to fetch WS ticket:', err)
+            scheduleReconnect(auth)
+            return
+        }
+
+        const wsUrl = `${wsBase}/ws/audit/${tenantId}/${jurisdiction}?ticket=${encodeURIComponent(ticket)}`
 
         console.log(`Connecting to WebSocket: ${wsUrl}`)
 
