@@ -77,6 +77,13 @@ async function handleProxy(request: Request, path: string) {
         responseHeaders.delete('content-encoding')
         responseHeaders.delete('transfer-encoding')
 
+        // Always forward the actual backend status (including 4xx/5xx)
+        // so the frontend sees the real error detail, not a wrapped 500
+        if (!res.ok) {
+            const text = Buffer.from(resBody).toString('utf-8')
+            console.error(`[PROXY] backend error ${res.status} for ${targetUrl}: ${text.slice(0, 500)}`)
+        }
+
         return new Response(resBody, {
             status: res.status,
             statusText: res.statusText,
@@ -84,6 +91,11 @@ async function handleProxy(request: Request, path: string) {
         })
     } catch (error: any) {
         console.error(`Proxy error for ${targetUrl}:`, error)
-        return NextResponse.json({ error: 'Internal Server Error', proxy_target: targetUrl, error_message: error?.message || String(error) }, { status: 500 })
+        return NextResponse.json({
+            error: 'Proxy failed to reach backend',
+            proxy_target: targetUrl,
+            error_message: error?.message || String(error)
+        }, { status: 502 })
     }
 }
+
