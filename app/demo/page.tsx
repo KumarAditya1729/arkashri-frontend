@@ -13,6 +13,7 @@ import {
   QrCode,
   RefreshCw,
   ShieldCheck,
+  type LucideIcon,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +27,13 @@ const flowSteps = [
   { label: "GST", detail: "GSTR-1 and 2B reconciliations completed", icon: RefreshCw, status: "Review" },
   { label: "SA/CARO", detail: "Checklist and working papers reviewed", icon: ClipboardCheck, status: "Done" },
   { label: "Report", detail: "UDIN, QR verification and artifact ready", icon: QrCode, status: "Ready" },
+]
+
+const readinessGates: Array<[string, number, LucideIcon]> = [
+  ["SA/CARO checklist", 92, CheckCircle2],
+  ["Working papers", 81, FileCheck2],
+  ["Client approvals", 67, MessageSquareText],
+  ["Integrity seal", 100, BadgeCheck],
 ]
 
 const exceptions = [
@@ -129,21 +137,16 @@ export default function FullAuditDemoPage() {
             <Badge className="bg-slate-900 text-white">Report ready</Badge>
           </div>
           <div className="mt-5 space-y-5">
-            {[
-              ["SA/CARO checklist", 92, CheckCircle2],
-              ["Working papers", 81, FileCheck2],
-              ["Client approvals", 67, MessageSquareText],
-              ["Integrity seal", 100, BadgeCheck],
-            ].map(([label, value, Icon]) => (
-              <div key={label as string}>
+            {readinessGates.map(([label, value, Icon]) => (
+              <div key={label}>
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span className="flex items-center gap-2 font-medium">
                     <Icon className="size-4 text-emerald-700" />
-                    {label as string}
+                    {label}
                   </span>
-                  <span>{value as number}%</span>
+                  <span>{value}%</span>
                 </div>
-                <Progress value={value as number} />
+                <Progress value={value} />
               </div>
             ))}
           </div>

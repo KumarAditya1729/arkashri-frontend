@@ -135,6 +135,9 @@ export interface EngagementCreate {
     jurisdiction: string
     client_name: string
     engagement_type: string
+    independence_cleared?: boolean
+    kyc_cleared?: boolean
+    conflict_check_notes?: string | null
 }
 
 // ─── Seal Types ───────────────────────────────────────────────────────────────
