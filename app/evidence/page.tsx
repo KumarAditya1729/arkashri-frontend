@@ -94,7 +94,7 @@ export default function EvidencePage() {
             let hash = 'hash-' + item.id;
             try {
                 // Generate a real SHA-256 hash if possible
-                const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(item.file_name + item.id + Date.now()));
+                const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${item.file_name}:${item.id}`));
                 hash = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
             } catch (e) {}
             
