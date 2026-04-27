@@ -12,10 +12,13 @@ const AUDIT_DURATIONS: Record<string, {
 }> = {
     'Forensic Audit': { traditional: 270, arkashri: 42, phases: [{ name: 'Planning & Scope', pct: 10, days: 4 }, { name: 'Data Acquisition', pct: 20, days: 8 }, { name: 'Evidence Analysis', pct: 35, days: 15 }, { name: 'Exception Review', pct: 20, days: 8 }, { name: 'Report & Sign-off', pct: 15, days: 7 }] },
     'Financial Audit': { traditional: 120, arkashri: 28, phases: [{ name: 'Risk Assessment', pct: 15, days: 4 }, { name: 'Internal Control Test', pct: 20, days: 6 }, { name: 'Substantive Testing', pct: 35, days: 10 }, { name: 'Review & Approvals', pct: 20, days: 5 }, { name: 'Report & Sign-off', pct: 10, days: 3 }] },
-    'Statutory Audit': { traditional: 150, arkashri: 30, phases: [{ name: 'Engagement Acceptance', pct: 10, days: 3 }, { name: 'Risk & Materiality', pct: 20, days: 6 }, { name: 'Substantive Procedures', pct: 40, days: 12 }, { name: 'CARO / Schedule III', pct: 20, days: 6 }, { name: 'Sign-off', pct: 10, days: 3 }] },
-    'Tax Audit': { traditional: 45, arkashri: 7, phases: [{ name: 'Document Collection', pct: 20, days: 1 }, { name: 'Computation Review', pct: 40, days: 3 }, { name: 'Form 3CA/3CB Prep', pct: 25, days: 2 }, { name: 'Sign-off', pct: 15, days: 1 }] },
+    'Statutory Audit': { traditional: 150, arkashri: 7, phases: [{ name: 'Onboarding & Documents', pct: 15, days: 1 }, { name: 'Data Import & Mapping', pct: 30, days: 2 }, { name: 'Evidence & Checklist', pct: 30, days: 2 }, { name: 'Review & Report', pct: 25, days: 2 }] },
+    'Tax Audit': { traditional: 45, arkashri: 7, phases: [{ name: 'Document Collection', pct: 20, days: 1 }, { name: 'Computation Review', pct: 30, days: 2 }, { name: 'Form 3CA/3CB Prep', pct: 25, days: 2 }, { name: 'Sign-off', pct: 25, days: 2 }] },
+    'GST Audit / GST Reconciliation': { traditional: 21, arkashri: 7, phases: [{ name: 'GST Data Import', pct: 20, days: 1 }, { name: 'Books Reconciliation', pct: 35, days: 3 }, { name: 'Mismatch Review', pct: 25, days: 2 }, { name: 'Report', pct: 20, days: 1 }] },
     'Compliance Audit': { traditional: 21, arkashri: 4, phases: [{ name: 'Control Mapping', pct: 25, days: 1 }, { name: 'Testing', pct: 45, days: 2 }, { name: 'Remediation Track', pct: 20, days: 1 }, { name: 'Report', pct: 10, days: 0 }] },
-    'Internal Audit': { traditional: 30, arkashri: 10, phases: [{ name: 'Planning', pct: 15, days: 2 }, { name: 'Field Work', pct: 50, days: 5 }, { name: 'Review', pct: 25, days: 2 }, { name: 'Report', pct: 10, days: 1 }] },
+    'Internal Audit': { traditional: 30, arkashri: 7, phases: [{ name: 'Planning', pct: 15, days: 1 }, { name: 'Field Work', pct: 45, days: 3 }, { name: 'Review', pct: 25, days: 2 }, { name: 'Report', pct: 15, days: 1 }] },
+    'Stock Audit': { traditional: 21, arkashri: 7, phases: [{ name: 'Stock Data Pull', pct: 20, days: 1 }, { name: 'Physical & Ageing Review', pct: 35, days: 3 }, { name: 'Valuation & DP', pct: 25, days: 2 }, { name: 'Report', pct: 20, days: 1 }] },
+    'Bank / Loan Audit': { traditional: 21, arkashri: 7, phases: [{ name: 'Loan File Review', pct: 20, days: 1 }, { name: 'Ledger & Interest Checks', pct: 35, days: 3 }, { name: 'Security & Covenants', pct: 25, days: 2 }, { name: 'Report', pct: 20, days: 1 }] },
     'IT Audit': { traditional: 49, arkashri: 18, phases: [{ name: 'Scope & Access', pct: 15, days: 3 }, { name: 'Control Testing', pct: 40, days: 7 }, { name: 'Vulnerability Review', pct: 30, days: 5 }, { name: 'Report', pct: 15, days: 3 }] },
     'ESG Audit': { traditional: 42, arkashri: 10, phases: [{ name: 'Data Collection', pct: 30, days: 3 }, { name: 'Emission Calc', pct: 35, days: 4 }, { name: 'Governance Review', pct: 25, days: 2 }, { name: 'Report', pct: 10, days: 1 }] },
     'Payroll Audit': { traditional: 14, arkashri: 3, phases: [{ name: 'Data Pull', pct: 25, days: 1 }, { name: 'Exception Review', pct: 50, days: 1 }, { name: 'Sign-off', pct: 25, days: 1 }] },
@@ -63,7 +66,7 @@ function formatDate(d: Date): string {
 }
 
 function daysUntil(d: Date): number {
-    const now = new Date('2026-02-25T18:13:26+05:30')  // current time per metadata
+    const now = new Date()
     const diff = d.getTime() - now.getTime()
     return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)))
 }
@@ -97,7 +100,7 @@ interface AuditCompletionEstimatorProps {
 
 export function AuditCompletionEstimator({ auditType, status, startDate }: AuditCompletionEstimatorProps) {
     const dur = AUDIT_DURATIONS[auditType] ?? DEFAULT_DURATION
-    const now = new Date('2026-02-25T18:13:26+05:30')
+    const now = new Date()
     const started = startDate ? new Date(startDate) : addWorkingDays(now, -Math.round(dur.arkashri * 0.4))
 
     const rawProgress = STATUS_PROGRESS[status] ?? 40

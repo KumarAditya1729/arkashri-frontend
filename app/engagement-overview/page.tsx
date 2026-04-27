@@ -2,9 +2,10 @@
 
 import { AuditShell } from '@/components/layout/AuditShell'
 import Link from 'next/link'
-import { ArrowRight, Search, Filter, Loader2, Plus, X } from 'lucide-react'
+import { ArrowRight, Search, Filter, Loader2, Plus, X, CalendarClock, CheckCircle2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { getEngagements, createEngagement } from '@/lib/api'
+import { AUDIT_TYPE_DEFINITIONS, getAuditTypeDefinition, normalizeAuditTypeTitle } from '@/lib/audit-types'
 
 type AuditStatus = 'In Progress' | 'Planning' | 'Review' | 'Completed' | 'Not Started'
 
@@ -31,6 +32,7 @@ const auditTypeIcons: Record<string, string> = {
     'External Audit': '🔬',
     'Statutory Audit': '📜',
     'Tax Audit': '🧾',
+    'GST Audit / GST Reconciliation': '🧾',
     'Compliance Audit': '✅',
     'Operational Audit': '⚙️',
     'IT Audit': '💻',
@@ -41,16 +43,10 @@ const auditTypeIcons: Record<string, string> = {
     'Cost Audit (CRA-3)': '💳',
     'Social Audit': '🤝',
     'Inventory Audit': '📦',
+    'Stock Audit': '📦',
+    'Bank / Loan Audit': '🏦',
     'Single Audit (US Federal / USAS)': '🏛️',
 }
-
-const AUDIT_TYPES = [
-    'Financial Audit', 'Forensic Audit', 'Internal Audit', 'Statutory Audit',
-    'Tax Audit', 'Compliance Audit', 'ESG Audit', 'External Audit',
-    'Operational Audit', 'IT Audit', 'Payroll Audit', 'Performance Audit',
-    'Quality Audit', 'Environmental Audit', 'Cost Audit (CRA-3)',
-    'Social Audit', 'Inventory Audit', 'Single Audit (US Federal / USAS)',
-]
 
 const JURISDICTIONS = [
     { code: 'IN', label: '🇮🇳 India (ICAI / SEBI)' },
@@ -70,17 +66,18 @@ export default function EngagementOverviewPage() {
     const [createError, setCreateError] = useState('')
     const [form, setForm] = useState({
         client_name: '',
-        engagement_type: 'Financial Audit',
+        engagement_type: AUDIT_TYPE_DEFINITIONS[0].title,
         jurisdiction: 'IN',
         tenant_id: 'default_tenant',
     })
+    const selectedAuditType = getAuditTypeDefinition(form.engagement_type)
 
     const loadEngagements = () => {
         setLoading(true)
         getEngagements().then(data => {
             setAllEngagements(data.map(d => ({
                 id: d.id,
-                type: d.engagement_type,
+                type: normalizeAuditTypeTitle(d.engagement_type),
                 client: d.client_name,
                 status: d.status === 'FIELD_WORK' ? 'In Progress' :
                     d.status === 'REVIEW' ? 'Review' :
@@ -98,17 +95,15 @@ export default function EngagementOverviewPage() {
         setCreating(true)
         setCreateError('')
         try {
-            // Map human-readable 'Financial Audit' to 'FINANCIAL_AUDIT' enum
-            const formattedType = form.engagement_type.toUpperCase().replace(/\s+/g, '_')
             await createEngagement({
                 ...form,
-                engagement_type: formattedType,
+                engagement_type: selectedAuditType.backendType,
                 independence_cleared: true,  // Admin creating via UI has done manual verification
                 kyc_cleared: true,
             })
             
             setShowModal(false)
-            setForm({ client_name: '', engagement_type: 'Financial Audit', jurisdiction: 'IN', tenant_id: 'default_tenant' })
+            setForm({ client_name: '', engagement_type: AUDIT_TYPE_DEFINITIONS[0].title, jurisdiction: 'IN', tenant_id: 'default_tenant' })
             loadEngagements()
         } catch (err: any) {
             setCreateError(err?.message ?? 'Failed to create engagement. Please try again.')
@@ -134,7 +129,7 @@ export default function EngagementOverviewPage() {
                 <div>
                     <div className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wider">Universal Audit</div>
                     <h1 className="text-3xl font-black text-[#002776] tracking-tight">Engagement Overview</h1>
-                    <p className="text-gray-500 mt-1 text-sm">All 14 audit types — {ALL_ENGAGEMENTS.length} active engagements across your mandate portfolio.</p>
+                    <p className="text-gray-500 mt-1 text-sm">Indian CA audit workflows — {ALL_ENGAGEMENTS.length} active engagements across your mandate portfolio.</p>
                 </div>
                 <button
                     id="new-engagement-btn"
@@ -223,7 +218,7 @@ export default function EngagementOverviewPage() {
             {/* New Engagement Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl p-6 max-h-[90vh] overflow-y-auto">
                         <div className="flex items-center justify-between mb-5">
                             <h2 className="text-xl font-black text-[#002776]">New Engagement</h2>
                             <button onClick={() => setShowModal(false)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all">
@@ -251,15 +246,54 @@ export default function EngagementOverviewPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Engagement Type *</label>
-                                <select
-                                    id="engagement-type-select"
-                                    value={form.engagement_type}
-                                    onChange={e => setForm(f => ({ ...f, engagement_type: e.target.value }))}
-                                    className="w-full h-10 px-3 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#002776]/30 focus:border-[#002776] bg-white"
-                                >
-                                    {AUDIT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                                </select>
+                                <label className="block text-sm font-semibold text-gray-700 mb-2">Audit Type *</label>
+                                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                    {AUDIT_TYPE_DEFINITIONS.map(auditType => {
+                                        const isSelected = form.engagement_type === auditType.title
+                                        return (
+                                            <button
+                                                key={auditType.slug}
+                                                type="button"
+                                                onClick={() => setForm(f => ({ ...f, engagement_type: auditType.title }))}
+                                                className={`rounded-xl border p-4 text-left transition-all ${isSelected ? 'border-[#002776] bg-blue-50 shadow-sm' : 'border-gray-100 bg-gray-50 hover:border-gray-200 hover:bg-white'}`}
+                                            >
+                                                <div className="flex items-start justify-between gap-3">
+                                                    <div>
+                                                        <div className="font-black text-gray-900">{auditType.title}</div>
+                                                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-gray-500">{auditType.shortDescription}</p>
+                                                    </div>
+                                                    {isSelected && <CheckCircle2 className="h-5 w-5 shrink-0 text-[#002776]" />}
+                                                </div>
+                                                <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 text-[10px] font-black uppercase tracking-wide text-[#002776]">
+                                                    <CalendarClock className="h-3 w-3" /> 7-day target
+                                                </div>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                                <input id="engagement-type-select" type="hidden" value={form.engagement_type} readOnly />
+                            </div>
+
+                            <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+                                <div className="text-xs font-black uppercase tracking-wider text-[#002776]">Selected workflow preview</div>
+                                <div className="mt-2 grid gap-3 md:grid-cols-2">
+                                    <div>
+                                        <div className="text-sm font-bold text-gray-900">Required documents</div>
+                                        <ul className="mt-2 space-y-1 text-xs text-gray-600">
+                                            {selectedAuditType.requiredDocuments.slice(0, 4).map(document => (
+                                                <li key={document}>- {document}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-bold text-gray-900">Checklist focus</div>
+                                        <ul className="mt-2 space-y-1 text-xs text-gray-600">
+                                            {selectedAuditType.checklistItems.slice(0, 4).map(item => (
+                                                <li key={item}>- {item}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
 
                             <div>

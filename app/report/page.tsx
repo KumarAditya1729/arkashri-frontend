@@ -2,7 +2,8 @@
 
 import { AuditShell } from '@/components/layout/AuditShell'
 import { useState } from 'react'
-import { FileText, Download, CheckCircle2, AlertTriangle, Eye, Printer, Bot } from 'lucide-react'
+import { FileText, Download, CheckCircle2, AlertTriangle, Eye, Printer, Bot, CalendarClock, ShieldCheck } from 'lucide-react'
+import { SEVEN_DAY_AUDIT_TIMELINE } from '@/lib/audit-types'
 
 const execContent = `The audit of the entity for the specified period was conducted in accordance with Standards on Auditing (SAs) issued by the ICAI. Based on our procedures, we have identified relevant risks and key findings requiring management attention.
 
@@ -131,6 +132,35 @@ export default function ReportPage() {
                         <div className="text-xs text-gray-500 mt-1">{s.label}</div>
                     </div>
                 ))}
+            </div>
+
+            <div className="mb-6 rounded-2xl border border-blue-100 bg-gradient-to-r from-blue-50 to-white p-5">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#002776]">
+                            <CalendarClock className="h-4 w-4" /> Day 7 report readiness
+                        </div>
+                        <h2 className="mt-1 text-xl font-black text-gray-900">Generate, attach UDIN, seal and share</h2>
+                        <p className="mt-1 max-w-3xl text-sm leading-6 text-gray-600">
+                            This report workspace represents the final Day 7 target step. Arkashri can prepare the draft artifact,
+                            but the CA/partner still reviews, signs, enters UDIN where applicable and approves the final seal.
+                        </p>
+                    </div>
+                    <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-700">
+                        <div className="flex items-center gap-2 text-sm font-black">
+                            <ShieldCheck className="h-4 w-4" /> Human sign-off required
+                        </div>
+                        <div className="mt-1 text-xs">No automatic legal completion is claimed.</div>
+                    </div>
+                </div>
+                <div className="mt-4 grid gap-2 md:grid-cols-7">
+                    {SEVEN_DAY_AUDIT_TIMELINE.map(stage => (
+                        <div key={stage.day} className={`rounded-xl border p-3 ${stage.day === 7 ? 'border-[#002776] bg-white shadow-sm' : 'border-gray-100 bg-white/60'}`}>
+                            <div className="text-xs font-black text-[#002776]">Day {stage.day}</div>
+                            <div className="mt-1 text-xs font-semibold leading-5 text-gray-700">{stage.title}</div>
+                        </div>
+                    ))}
+                </div>
             </div>
 
             <div className="flex gap-5">
