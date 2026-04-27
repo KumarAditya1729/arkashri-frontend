@@ -8,6 +8,7 @@ import { AuditTypeWorkflow } from '@/components/audit/AuditTypeWorkflow'
 import { registryByShortId } from '@/lib/engagementRegistry'
 import { getBackendBaseUrl } from '@/lib/env'
 import { normalizeAuditTypeTitle } from '@/lib/audit-types'
+import type { AuditSlaApiStatus, WorkflowReportStatus, WorkflowReviewStatus } from '@/lib/api'
 import { cookies } from 'next/headers'
 
 // ─── Local fallback registry ──────────────────────────────────────────────────
@@ -55,6 +56,13 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
         jurisdiction: string
         standardsFramework: string
         createdAt: string | null
+        startDate: string | null
+        currentDay?: number | null
+        slaStatus?: AuditSlaApiStatus | null
+        checklistProgress?: Record<string, unknown> | null
+        documentProgress?: Record<string, unknown> | null
+        reviewStatus?: WorkflowReviewStatus | null
+        reportStatus?: WorkflowReportStatus | null
         isLive: true
     }
     type LocalData = {
@@ -66,6 +74,13 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
         jurisdiction: string
         standardsFramework: string
         createdAt: null
+        startDate: null
+        currentDay: null
+        slaStatus: null
+        checklistProgress: null
+        documentProgress: null
+        reviewStatus: null
+        reportStatus: null
         isLive: false
     }
     type EngagementData = LiveData | LocalData
@@ -90,7 +105,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
             if (res.ok) {
                 const liveEng = await res.json()
                 engagementData = {
-                    auditType: normalizeAuditTypeTitle(liveEng.engagement_type),
+                    auditType: normalizeAuditTypeTitle(liveEng.auditType ?? liveEng.engagement_type),
                     clientName: liveEng.client_name,
                     status: liveEng.status,
                     sealHash: liveEng.seal_hash,
@@ -98,6 +113,13 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
                     jurisdiction: liveEng.jurisdiction,
                     standardsFramework: liveEng.standards_framework,
                     createdAt: liveEng.created_at,
+                    startDate: liveEng.startDate ?? liveEng.created_at,
+                    currentDay: liveEng.currentDay ?? null,
+                    slaStatus: liveEng.slaStatus ?? null,
+                    checklistProgress: liveEng.checklistProgress ?? null,
+                    documentProgress: liveEng.documentProgress ?? null,
+                    reviewStatus: liveEng.reviewStatus ?? null,
+                    reportStatus: liveEng.reportStatus ?? null,
                     isLive: true,
                 }
             } else {
@@ -181,7 +203,13 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
             <AuditTypeWorkflow
                 auditType={engagementData.auditType}
                 status={engagementData.status}
-                startDate={engagementData.createdAt}
+                startDate={engagementData.startDate}
+                currentDay={engagementData.currentDay}
+                slaStatus={engagementData.slaStatus}
+                checklistProgress={engagementData.checklistProgress}
+                documentProgress={engagementData.documentProgress}
+                reviewStatus={engagementData.reviewStatus}
+                reportStatus={engagementData.reportStatus}
             />
 
             <WidgetErrorBoundary fallback={<div className="font-mono text-red-500 bg-red-50 p-4 border border-red-200">System Error: Gateway offline.</div>}>
@@ -234,7 +262,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
 function buildLocalFallback(
     shortId: string,
     entry: ReturnType<typeof registryByShortId>,
-): { auditType: string; clientName: string; status: string; sealHash: null; sealedAt: null; jurisdiction: string; standardsFramework: string; createdAt: null; isLive: false } {
+): { auditType: string; clientName: string; status: string; sealHash: null; sealedAt: null; jurisdiction: string; standardsFramework: string; createdAt: null; startDate: null; currentDay: null; slaStatus: null; checklistProgress: null; documentProgress: null; reviewStatus: null; reportStatus: null; isLive: false } {
     const local = LOCAL_REGISTRY[shortId] ?? DEFAULT_PLAYBOOK
     return {
         auditType: local.auditType,
@@ -245,6 +273,13 @@ function buildLocalFallback(
         jurisdiction: entry?.jurisdiction ?? 'IN',
         standardsFramework: 'ICAI_SA', // Default local metric
         createdAt: null,
+        startDate: null,
+        currentDay: null,
+        slaStatus: null,
+        checklistProgress: null,
+        documentProgress: null,
+        reviewStatus: null,
+        reportStatus: null,
         isLive: false,
     }
 }

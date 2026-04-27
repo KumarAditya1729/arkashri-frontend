@@ -114,6 +114,10 @@ export interface TokenResponse {
 // ─── Engagement Types ─────────────────────────────────────────────────────────
 
 export type EngagementStatus = 'ACCEPTED' | 'UNDER_REVIEW' | 'REJECTED' | 'PLANNING' | 'FIELD_WORK' | 'REVIEW' | 'COMPLETED' | 'SEALED'
+export type AuditWorkflowType = 'statutory_audit' | 'tax_audit' | 'gst_audit' | 'internal_audit' | 'stock_audit' | 'bank_loan_audit'
+export type AuditSlaApiStatus = 'on_track' | 'at_risk' | 'delayed' | 'completed'
+export type WorkflowReviewStatus = 'pending' | 'in_review' | 'changes_requested' | 'approved'
+export type WorkflowReportStatus = 'not_started' | 'draft' | 'ready_for_review' | 'generated' | 'sealed'
 
 export interface EngagementResponse {
     id: string
@@ -122,16 +126,16 @@ export interface EngagementResponse {
     standards_framework: string
     client_name: string
     engagement_type: string
-    auditType?: string
+    auditType?: AuditWorkflowType | string
     targetCompletionDays?: number
     startDate?: string
     dueDate?: string
     currentDay?: number
-    slaStatus?: 'on_track' | 'at_risk' | 'delayed' | 'completed'
+    slaStatus?: AuditSlaApiStatus
     checklistProgress?: Record<string, unknown>
     documentProgress?: Record<string, unknown>
-    reviewStatus?: 'pending' | 'in_review' | 'changes_requested' | 'approved'
-    reportStatus?: 'not_started' | 'draft' | 'ready_for_review' | 'generated' | 'sealed'
+    reviewStatus?: WorkflowReviewStatus
+    reportStatus?: WorkflowReportStatus
     status: EngagementStatus
     independence_cleared: boolean
     kyc_cleared: boolean
@@ -146,13 +150,26 @@ export interface EngagementCreate {
     jurisdiction: string
     client_name: string
     engagement_type: string
-    auditType?: string
+    auditType?: AuditWorkflowType | string
     targetCompletionDays?: number
     startDate?: string
     dueDate?: string
     independence_cleared?: boolean
     kyc_cleared?: boolean
     conflict_check_notes?: string | null
+}
+
+export interface EngagementWorkflowUpdate {
+    auditType?: AuditWorkflowType | string
+    targetCompletionDays?: number
+    startDate?: string
+    dueDate?: string
+    currentDay?: number
+    slaStatus?: AuditSlaApiStatus
+    checklistProgress?: Record<string, unknown>
+    documentProgress?: Record<string, unknown>
+    reviewStatus?: WorkflowReviewStatus
+    reportStatus?: WorkflowReportStatus
 }
 
 // ─── Seal Types ───────────────────────────────────────────────────────────────
@@ -314,6 +331,13 @@ export async function getEngagements(): Promise<EngagementResponse[]> {
 
 export async function createEngagement(payload: EngagementCreate): Promise<EngagementResponse> {
     return apiFetch<EngagementResponse>('/api/v1/engagements/engagements', { method: 'POST', body: JSON.stringify(payload) })
+}
+
+export async function updateEngagementWorkflow(engagementId: string, payload: EngagementWorkflowUpdate): Promise<EngagementResponse> {
+    return apiFetch<EngagementResponse>(`/api/v1/engagements/engagements/${engagementId}/workflow`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+    })
 }
 
 export async function sealEngagement(uuid: string): Promise<SealResponse> {

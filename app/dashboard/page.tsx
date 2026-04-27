@@ -6,8 +6,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, Activity, Users, FileWarning, TrendingUp, Loader2, CalendarClock, ClipboardCheck, FileText, FolderOpen } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { getAutomationScore, AutomationScoreResponse, getEngagements, ApiError } from '@/lib/api'
-import { AUDIT_TYPE_DEFINITIONS, getSlaStatus, normalizeAuditTypeTitle, SLA_STATUS_STYLES, type AuditSlaStatus } from '@/lib/audit-types'
+import { getAutomationScore, AutomationScoreResponse, getEngagements, ApiError, type AuditSlaApiStatus, type WorkflowReportStatus, type WorkflowReviewStatus } from '@/lib/api'
+import { AUDIT_TYPE_DEFINITIONS, getSlaStatus, normalizeAuditTypeTitle, SLA_STATUS_STYLES, toDisplaySlaStatus, type AuditSlaStatus } from '@/lib/audit-types'
 
 type DashboardEngagement = {
     id: string
@@ -16,6 +16,12 @@ type DashboardEngagement = {
     status: string
     risk: string
     createdAt: string | null
+    startDate: string | null
+    slaStatus?: AuditSlaApiStatus
+    checklistProgress?: Record<string, unknown>
+    documentProgress?: Record<string, unknown>
+    reviewStatus?: WorkflowReviewStatus
+    reportStatus?: WorkflowReportStatus
 }
 
 // Dynamically fetched
@@ -58,6 +64,22 @@ const auditIcons: Record<string, string> = {
     'Single Audit (US Federal / USAS)': '🏛️',
 }
 
+function progressNumber(progress: Record<string, unknown> | undefined, keys: string[]): number | null {
+    if (!progress) return null
+    for (const key of keys) {
+        const value = progress[key]
+        if (typeof value === 'number' && Number.isFinite(value)) return value
+    }
+    return null
+}
+
+function hasPendingProgress(progress: Record<string, unknown> | undefined): boolean {
+    const total = progressNumber(progress, ['total', 'required', 'count'])
+    const completed = progressNumber(progress, ['completed', 'verified', 'uploaded', 'done'])
+    if (total !== null && completed !== null) return completed < total
+    return progress ? Object.keys(progress).length === 0 : true
+}
+
 export default function Dashboard() {
     const [ENGAGEMENTS, setEngagements] = useState<DashboardEngagement[]>([])
 
@@ -65,10 +87,19 @@ export default function Dashboard() {
     const critical = ENGAGEMENTS.filter(e => e.risk === 'Critical').length
     const pending = ENGAGEMENTS.filter(e => e.status === 'Planning' || e.status === 'Not Started').length
     const slaSummary = ENGAGEMENTS.reduce<Record<AuditSlaStatus, number>>((acc, engagement) => {
-        const status = getSlaStatus({ status: engagement.status, startDate: engagement.createdAt })
+        const status = toDisplaySlaStatus(engagement.slaStatus) ?? getSlaStatus({
+            status: engagement.status,
+            startDate: engagement.startDate ?? engagement.createdAt,
+            evidencePending: hasPendingProgress(engagement.documentProgress),
+            reviewPending: engagement.reviewStatus !== 'approved',
+            reportGenerated: engagement.reportStatus === 'generated' || engagement.reportStatus === 'sealed',
+        })
         acc[status] += 1
         return acc
     }, { 'On Track': 0, 'At Risk': 0, Delayed: 0, Completed: 0 })
+    const evidencePending = ENGAGEMENTS.filter(e => hasPendingProgress(e.documentProgress)).length
+    const reviewPending = ENGAGEMENTS.filter(e => e.reviewStatus !== 'approved').length
+    const reportsReady = ENGAGEMENTS.filter(e => e.reportStatus === 'generated' || e.reportStatus === 'sealed').length
 
     const router = useRouter()
     const [automationData, setAutomationData] = useState<AutomationScoreResponse | null>(null)
@@ -92,13 +123,19 @@ export default function Dashboard() {
             // Map EngagementResponse to local format for UI
             setEngagements(data.map(d => ({
                 id: d.id,
-                type: normalizeAuditTypeTitle(d.engagement_type),
+                type: normalizeAuditTypeTitle(d.auditType ?? d.engagement_type),
                 client: d.client_name,
                 status: d.status === 'FIELD_WORK' ? 'In Progress' :
                     d.status === 'REVIEW' ? 'Review' :
                         d.status === 'COMPLETED' || d.status === 'SEALED' ? 'Completed' : 'Planning',
                 risk: 'Medium',
                 createdAt: d.created_at,
+                startDate: d.startDate ?? d.created_at,
+                slaStatus: d.slaStatus,
+                checklistProgress: d.checklistProgress,
+                documentProgress: d.documentProgress,
+                reviewStatus: d.reviewStatus,
+                reportStatus: d.reportStatus,
             })))
         })
     }, [router])
@@ -166,9 +203,9 @@ export default function Dashboard() {
                     <div className="space-y-3">
                         {[
                             { label: 'Active timelines', value: ENGAGEMENTS.length, icon: CalendarClock, style: 'bg-blue-50 text-blue-700' },
-                            { label: 'Evidence pending', value: Math.max(0, ENGAGEMENTS.length - slaSummary.Completed), icon: FolderOpen, style: 'bg-amber-50 text-amber-700' },
-                            { label: 'Review pending', value: pending, icon: ClipboardCheck, style: 'bg-purple-50 text-purple-700' },
-                            { label: 'Reports ready', value: slaSummary.Completed, icon: FileText, style: 'bg-green-50 text-green-700' },
+                            { label: 'Evidence pending', value: evidencePending, icon: FolderOpen, style: 'bg-amber-50 text-amber-700' },
+                            { label: 'Review pending', value: reviewPending || pending, icon: ClipboardCheck, style: 'bg-purple-50 text-purple-700' },
+                            { label: 'Reports ready', value: reportsReady || slaSummary.Completed, icon: FileText, style: 'bg-green-50 text-green-700' },
                         ].map(item => (
                             <div key={item.label} className="flex items-center justify-between rounded-xl border border-gray-100 p-3">
                                 <div className="flex items-center gap-2">

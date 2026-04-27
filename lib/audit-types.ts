@@ -1,4 +1,6 @@
 export type AuditSlaStatus = 'On Track' | 'At Risk' | 'Delayed' | 'Completed'
+export type AuditWorkflowType = 'statutory_audit' | 'tax_audit' | 'gst_audit' | 'internal_audit' | 'stock_audit' | 'bank_loan_audit'
+export type AuditSlaApiStatus = 'on_track' | 'at_risk' | 'delayed' | 'completed'
 
 export interface AuditTimelineStage {
     day: number
@@ -10,6 +12,7 @@ export interface AuditTypeDefinition {
     slug: string
     title: string
     backendType: string
+    workflowType: AuditWorkflowType
     shortDescription: string
     expectedCompletionDays: 7
     requiredDocuments: string[]
@@ -32,6 +35,7 @@ export const AUDIT_TYPE_DEFINITIONS: AuditTypeDefinition[] = [
         slug: 'statutory-audit',
         title: 'Statutory Audit',
         backendType: 'STATUTORY_AUDIT',
+        workflowType: 'statutory_audit',
         shortDescription: 'Companies Act audit workflow with SA-aligned planning, evidence, CARO readiness and report sign-off.',
         expectedCompletionDays: 7,
         requiredDocuments: [
@@ -57,6 +61,7 @@ export const AUDIT_TYPE_DEFINITIONS: AuditTypeDefinition[] = [
         slug: 'tax-audit',
         title: 'Tax Audit',
         backendType: 'TAX_AUDIT',
+        workflowType: 'tax_audit',
         shortDescription: 'Income Tax Act audit flow for Form 3CA/3CB and Form 3CD with reconciliations and disallowance checks.',
         expectedCompletionDays: 7,
         requiredDocuments: [
@@ -82,6 +87,7 @@ export const AUDIT_TYPE_DEFINITIONS: AuditTypeDefinition[] = [
         slug: 'gst-audit-reconciliation',
         title: 'GST Audit / GST Reconciliation',
         backendType: 'COMPLIANCE_AUDIT',
+        workflowType: 'gst_audit',
         shortDescription: 'GST books-vs-return reconciliation for sales, ITC, e-way bills, HSN and tax liability mismatches.',
         expectedCompletionDays: 7,
         requiredDocuments: [
@@ -107,6 +113,7 @@ export const AUDIT_TYPE_DEFINITIONS: AuditTypeDefinition[] = [
         slug: 'internal-audit',
         title: 'Internal Audit',
         backendType: 'INTERNAL_AUDIT',
+        workflowType: 'internal_audit',
         shortDescription: 'Process, controls and exception testing workflow for recurring internal audit cycles.',
         expectedCompletionDays: 7,
         requiredDocuments: [
@@ -132,6 +139,7 @@ export const AUDIT_TYPE_DEFINITIONS: AuditTypeDefinition[] = [
         slug: 'stock-audit',
         title: 'Stock Audit',
         backendType: 'INVENTORY_AUDIT',
+        workflowType: 'stock_audit',
         shortDescription: 'Inventory verification and bank drawing-power support with ageing, valuation and damaged-stock checks.',
         expectedCompletionDays: 7,
         requiredDocuments: [
@@ -157,6 +165,7 @@ export const AUDIT_TYPE_DEFINITIONS: AuditTypeDefinition[] = [
         slug: 'bank-loan-audit',
         title: 'Bank / Loan Audit',
         backendType: 'FINANCIAL_AUDIT',
+        workflowType: 'bank_loan_audit',
         shortDescription: 'Loan account, security, covenant and utilization review for lender or borrower audit support.',
         expectedCompletionDays: 7,
         requiredDocuments: [
@@ -181,8 +190,10 @@ export const AUDIT_TYPE_DEFINITIONS: AuditTypeDefinition[] = [
 ]
 
 const TITLE_BY_BACKEND_TYPE = new Map(AUDIT_TYPE_DEFINITIONS.map(auditType => [auditType.backendType, auditType.title]))
+const TITLE_BY_WORKFLOW_TYPE = new Map(AUDIT_TYPE_DEFINITIONS.map(auditType => [auditType.workflowType, auditType.title]))
 const DEFINITION_BY_TITLE = new Map(AUDIT_TYPE_DEFINITIONS.map(auditType => [auditType.title, auditType]))
 const DEFINITION_BY_BACKEND_TYPE = new Map(AUDIT_TYPE_DEFINITIONS.map(auditType => [auditType.backendType, auditType]))
+const DEFINITION_BY_WORKFLOW_TYPE = new Map(AUDIT_TYPE_DEFINITIONS.map(auditType => [auditType.workflowType, auditType]))
 
 export function normalizeAuditTypeTitle(rawType: string | null | undefined): string {
     if (!rawType) return AUDIT_TYPE_DEFINITIONS[0].title
@@ -191,6 +202,8 @@ export function normalizeAuditTypeTitle(rawType: string | null | undefined): str
     const upper = rawType.toUpperCase()
     const mappedTitle = TITLE_BY_BACKEND_TYPE.get(upper)
     if (mappedTitle) return mappedTitle
+    const workflowTitle = TITLE_BY_WORKFLOW_TYPE.get(rawType.toLowerCase() as AuditWorkflowType)
+    if (workflowTitle) return workflowTitle
 
     return rawType
         .toLowerCase()
@@ -204,11 +217,17 @@ export function getAuditTypeDefinition(rawType: string | null | undefined): Audi
     const normalizedTitle = normalizeAuditTypeTitle(rawType)
     return DEFINITION_BY_TITLE.get(normalizedTitle)
         ?? DEFINITION_BY_BACKEND_TYPE.get(rawType?.toUpperCase() ?? '')
+        ?? DEFINITION_BY_WORKFLOW_TYPE.get(rawType?.toLowerCase() as AuditWorkflowType)
         ?? AUDIT_TYPE_DEFINITIONS[0]
 }
 
 export function getAuditTypeBySlug(slug: string): AuditTypeDefinition | undefined {
     return AUDIT_TYPE_DEFINITIONS.find(auditType => auditType.slug === slug)
+}
+
+export function getAuditTypeByWorkflowType(workflowType: string | null | undefined): AuditTypeDefinition | undefined {
+    if (!workflowType) return undefined
+    return DEFINITION_BY_WORKFLOW_TYPE.get(workflowType.toLowerCase() as AuditWorkflowType)
 }
 
 export function getAuditDay(startDate?: string | null, now = new Date()): number {
@@ -245,4 +264,19 @@ export const SLA_STATUS_STYLES: Record<AuditSlaStatus, string> = {
     'At Risk': 'bg-amber-50 text-amber-700 border-amber-200',
     Delayed: 'bg-red-50 text-red-700 border-red-200',
     Completed: 'bg-green-50 text-green-700 border-green-200',
+}
+
+export function toDisplaySlaStatus(status: AuditSlaApiStatus | string | null | undefined): AuditSlaStatus | null {
+    switch (status) {
+        case 'on_track':
+            return 'On Track'
+        case 'at_risk':
+            return 'At Risk'
+        case 'delayed':
+            return 'Delayed'
+        case 'completed':
+            return 'Completed'
+        default:
+            return null
+    }
 }

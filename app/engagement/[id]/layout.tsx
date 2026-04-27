@@ -37,7 +37,7 @@ export default async function EngagementLayout({
                 meta = {
                     shortId: id.substring(0, 8),
                     uuid: id,
-                    auditType: normalizeAuditTypeTitle(liveEng.engagement_type),
+                    auditType: normalizeAuditTypeTitle(liveEng.auditType ?? liveEng.engagement_type),
                     client: liveEng.client_name,
                     jurisdiction: liveEng.jurisdiction,
                     period: 'LIVE RECORD'
