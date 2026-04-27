@@ -6,6 +6,7 @@ import { AuditCompletionEstimator } from '@/components/audit/AuditCompletionEsti
 import PartnerSignOff from '@/components/audit/PartnerSignOff'
 import { getEngagement } from '@/lib/api'
 import { registryByShortId } from '@/lib/engagementRegistry'
+import { getBackendBaseUrl } from '@/lib/env'
 import { cookies } from 'next/headers'
 
 // ─── Local fallback registry ──────────────────────────────────────────────────
@@ -73,11 +74,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
             const cookieStore = await cookies()
             const token = cookieStore.get('arkashri_token')?.value
 
-            let baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
-            baseUrl = baseUrl.replace(/\/+$/, '')
-            if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
-                baseUrl = `https://${baseUrl}`
-            }
+            const baseUrl = getBackendBaseUrl()
 
             const res = await fetch(`${baseUrl}/api/v1/engagements/engagements/${uuid}`, {
                 headers: {
