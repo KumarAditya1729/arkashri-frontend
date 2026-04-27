@@ -2,6 +2,7 @@ import React from 'react'
 import { AuditShell } from '@/components/layout/AuditShell'
 import { EngagementStepper } from '@/components/audit/EngagementStepper'
 import { registryByShortId } from '@/lib/engagementRegistry'
+import { getBackendBaseUrl } from '@/lib/env'
 import { notFound } from 'next/navigation'
 import { EngagementStateInitializer } from '@/components/audit/EngagementStateInitializer'
 import { cookies } from 'next/headers'
@@ -21,11 +22,7 @@ export default async function EngagementLayout({
             const cookieStore = await cookies()
             const token = cookieStore.get('arkashri_token')?.value
 
-            let baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
-            baseUrl = baseUrl.replace(/\/+$/, '')
-            if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
-                baseUrl = `https://${baseUrl}`
-            }
+            const baseUrl = getBackendBaseUrl()
 
             const res = await fetch(`${baseUrl}/api/v1/engagements/engagements/${id}`, {
                 headers: {

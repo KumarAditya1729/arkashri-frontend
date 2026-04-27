@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
-const BACKEND_URL = process.env.API_URL ?? 'http://localhost:8000'
+import { getBackendBaseUrl } from '@/lib/env'
 
 export async function GET(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
     const { path } = await params
@@ -32,10 +32,7 @@ async function handleProxy(request: Request, path: string) {
     const searchParams = new URL(request.url).search
     
     // Normalize backend URL and handle if it already includes /api/v1
-    let baseUrl = BACKEND_URL.replace(/\/+$/, '')
-    if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
-        baseUrl = `https://${baseUrl}`
-    }
+    const baseUrl = getBackendBaseUrl()
     let targetUrl: string
     
     if (baseUrl.endsWith('/api/v1')) {
@@ -89,13 +86,12 @@ async function handleProxy(request: Request, path: string) {
             statusText: res.statusText,
             headers: responseHeaders,
         })
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error(`Proxy error for ${targetUrl}:`, error)
         return NextResponse.json({
             error: 'Proxy failed to reach backend',
             proxy_target: targetUrl,
-            error_message: error?.message || String(error)
+            error_message: error instanceof Error ? error.message : String(error)
         }, { status: 502 })
     }
 }
-

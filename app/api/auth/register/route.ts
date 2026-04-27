@@ -1,14 +1,11 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
-const BACKEND_URL = process.env.API_URL ?? 'http://localhost:8000'
+import { getBackendBaseUrl } from '@/lib/env'
 
 export async function POST(request: Request) {
     try {
-        let baseUrl = BACKEND_URL.replace(/\/+$/, '')
-        if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://')) {
-            baseUrl = `https://${baseUrl}`
-        }
+        const baseUrl = getBackendBaseUrl()
         const body = await request.json()
         const { fullName, email, password, organisation, role } = body
 

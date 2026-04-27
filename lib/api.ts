@@ -11,10 +11,11 @@
  *   - Cleared on sign-out
  */
 
+import { getAppBaseUrl } from './env'
+
 function getBaseUrl() {
     if (typeof window !== 'undefined') return '/api/proxy'
-    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/api/proxy`
-    return 'http://localhost:3000/api/proxy'
+    return `${getAppBaseUrl()}/api/proxy`
 }
 // Intentionally no top-level BASE_URL constant — evaluated lazily per call to prevent SSR/client split-brain
 const TENANT = process.env.NEXT_PUBLIC_API_TENANT ?? 'default_tenant'
@@ -729,13 +730,13 @@ export async function getAnchoredEvidence(): Promise<{ anchored_evidence: Anchor
     }
 }
 
-export async function anchorMultiChainEvidence(hash: string, metadata: any = {}): Promise<AnchoredEvidence> {
+export async function anchorMultiChainEvidence(hash: string, metadata: Record<string, unknown> = {}): Promise<AnchoredEvidence> {
     return apiFetch<AnchoredEvidence>(`/api/v1/multi-chain/anchor`, {
         method: 'POST',
         body: JSON.stringify({ evidence_hash: hash, metadata }),
     })
 }
 
-export async function verifyMultiChainEvidence(hash: string): Promise<any> {
-    return apiFetch<any>(`/api/v1/multi-chain/verify/${hash}`)
+export async function verifyMultiChainEvidence(hash: string): Promise<unknown> {
+    return apiFetch<unknown>(`/api/v1/multi-chain/verify/${hash}`)
 }
