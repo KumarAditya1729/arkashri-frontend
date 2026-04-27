@@ -77,7 +77,7 @@ export default function EngagementOverviewPage() {
         getEngagements().then(data => {
             setAllEngagements(data.map(d => ({
                 id: d.id,
-                type: normalizeAuditTypeTitle(d.engagement_type),
+                type: normalizeAuditTypeTitle(d.auditType ?? d.engagement_type),
                 client: d.client_name,
                 status: d.status === 'FIELD_WORK' ? 'In Progress' :
                     d.status === 'REVIEW' ? 'Review' :
@@ -98,6 +98,7 @@ export default function EngagementOverviewPage() {
             await createEngagement({
                 ...form,
                 engagement_type: selectedAuditType.backendType,
+                auditType: selectedAuditType.workflowType,
                 independence_cleared: true,  // Admin creating via UI has done manual verification
                 kyc_cleared: true,
             })
