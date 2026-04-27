@@ -137,8 +137,8 @@ export default function Dashboard() {
                 <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
                     <div className="mb-4 flex items-center justify-between gap-3">
                         <div>
-                            <h2 className="text-xl font-black text-[#002776]">Start a 7-Day Audit Workflow</h2>
-                            <p className="text-sm text-gray-500">Choose the Indian CA workflow first, then Arkashri guides documents, checklist, review and Day 7 reporting.</p>
+                            <h2 className="text-xl font-black text-[#002776]">Start a Guided Audit Workflow</h2>
+                            <p className="text-sm text-gray-500">Choose the Indian CA workflow first, then Arkashri guides documents, checklist, review and final reporting.</p>
                         </div>
                         <Link href="/engagement-overview" className="hidden shrink-0 rounded-xl bg-[#002776] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#001a54] md:inline-flex">
                             New Engagement
@@ -153,7 +153,7 @@ export default function Dashboard() {
                                 </div>
                                 <p className="line-clamp-2 text-xs leading-5 text-gray-500">{auditType.shortDescription}</p>
                                 <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 text-[10px] font-black uppercase tracking-wide text-[#002776]">
-                                    <CalendarClock className="h-3 w-3" /> 7-day target
+                                    <CalendarClock className="h-3 w-3" /> Target timeline
                                 </div>
                             </Link>
                         ))}
@@ -161,11 +161,11 @@ export default function Dashboard() {
                 </div>
 
                 <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-                    <h2 className="text-lg font-black text-[#002776]">7-Day SLA Summary</h2>
-                    <p className="mb-4 text-sm text-gray-500">Demo-ready status logic across active engagements.</p>
+                    <h2 className="text-lg font-black text-[#002776]">Audit Progress Summary</h2>
+                    <p className="mb-4 text-sm text-gray-500">Target SLA status across active engagements.</p>
                     <div className="space-y-3">
                         {[
-                            { label: 'Due within 7 days', value: ENGAGEMENTS.length, icon: CalendarClock, style: 'bg-blue-50 text-blue-700' },
+                            { label: 'Active timelines', value: ENGAGEMENTS.length, icon: CalendarClock, style: 'bg-blue-50 text-blue-700' },
                             { label: 'Evidence pending', value: Math.max(0, ENGAGEMENTS.length - slaSummary.Completed), icon: FolderOpen, style: 'bg-amber-50 text-amber-700' },
                             { label: 'Review pending', value: pending, icon: ClipboardCheck, style: 'bg-purple-50 text-purple-700' },
                             { label: 'Reports ready', value: slaSummary.Completed, icon: FileText, style: 'bg-green-50 text-green-700' },

@@ -248,7 +248,7 @@ export default function MonitoringPage() {
             <option value="1h">Last Hour</option>
             <option value="6h">Last 6 Hours</option>
             <option value="24h">Last 24 Hours</option>
-            <option value="7d">Last 7 Days</option>
+            <option value="7d">Last Week</option>
           </select>
           <Button variant="outline" size="sm">
             <BarChart3 className="mr-2 h-4 w-4" />

@@ -122,6 +122,16 @@ export interface EngagementResponse {
     standards_framework: string
     client_name: string
     engagement_type: string
+    auditType?: string
+    targetCompletionDays?: number
+    startDate?: string
+    dueDate?: string
+    currentDay?: number
+    slaStatus?: 'on_track' | 'at_risk' | 'delayed' | 'completed'
+    checklistProgress?: Record<string, unknown>
+    documentProgress?: Record<string, unknown>
+    reviewStatus?: 'pending' | 'in_review' | 'changes_requested' | 'approved'
+    reportStatus?: 'not_started' | 'draft' | 'ready_for_review' | 'generated' | 'sealed'
     status: EngagementStatus
     independence_cleared: boolean
     kyc_cleared: boolean
@@ -136,6 +146,10 @@ export interface EngagementCreate {
     jurisdiction: string
     client_name: string
     engagement_type: string
+    auditType?: string
+    targetCompletionDays?: number
+    startDate?: string
+    dueDate?: string
     independence_cleared?: boolean
     kyc_cleared?: boolean
     conflict_check_notes?: string | null
