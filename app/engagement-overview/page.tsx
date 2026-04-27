@@ -265,7 +265,7 @@ export default function EngagementOverviewPage() {
                                                     {isSelected && <CheckCircle2 className="h-5 w-5 shrink-0 text-[#002776]" />}
                                                 </div>
                                                 <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 text-[10px] font-black uppercase tracking-wide text-[#002776]">
-                                                    <CalendarClock className="h-3 w-3" /> 7-day target
+                                                    <CalendarClock className="h-3 w-3" /> Target timeline
                                                 </div>
                                             </button>
                                         )

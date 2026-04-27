@@ -15,7 +15,7 @@ interface AuditTypeWorkflowProps {
 
 export function AuditTypeWorkflow({ auditType, status, startDate, compact = false }: AuditTypeWorkflowProps) {
     const definition = getAuditTypeDefinition(auditType)
-    const currentDay = getAuditDay(startDate)
+    const currentStage = getAuditDay(startDate)
     const slaStatus = getSlaStatus({ status, startDate })
     const visibleDocuments = compact ? definition.requiredDocuments.slice(0, 4) : definition.requiredDocuments
     const visibleChecklist = compact ? definition.checklistItems.slice(0, 5) : definition.checklistItems
@@ -25,13 +25,13 @@ export function AuditTypeWorkflow({ auditType, status, startDate, compact = fals
             <div className="border-b border-gray-100 bg-gradient-to-r from-[#002776] to-[#0057b8] px-6 py-5 text-white">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
-                        <div className="text-xs font-bold uppercase tracking-[0.2em] text-blue-100">7-day target audit workflow</div>
+                        <div className="text-xs font-bold uppercase tracking-[0.2em] text-blue-100">Guided audit workflow</div>
                         <h2 className="mt-1 text-2xl font-black tracking-tight">{definition.title}</h2>
                         <p className="mt-1 max-w-3xl text-sm leading-6 text-blue-50">{definition.shortDescription}</p>
                     </div>
                     <div className="rounded-xl bg-white/10 px-4 py-3 text-right backdrop-blur">
                         <div className="text-xs font-semibold text-blue-100">Target completion</div>
-                        <div className="text-2xl font-black">{definition.expectedCompletionDays} days</div>
+                        <div className="text-lg font-black">Engagement plan</div>
                         <div className={`mt-2 rounded-full border px-2.5 py-1 text-xs font-bold ${SLA_STATUS_STYLES[slaStatus]} bg-white`}>
                             {slaStatus}
                         </div>
@@ -46,13 +46,13 @@ export function AuditTypeWorkflow({ auditType, status, startDate, compact = fals
                             <Clock className="h-4 w-4 text-[#002776]" />
                             <h3 className="font-black text-gray-900">Audit Progress Tracker</h3>
                         </div>
-                        <span className="text-xs font-bold text-gray-500">Day {currentDay} of 7</span>
+                        <span className="text-xs font-bold text-gray-500">Stage {currentStage} of {definition.timeline.length}</span>
                     </div>
 
                     <div className="space-y-3">
                         {definition.timeline.map(stage => {
-                            const isComplete = stage.day < currentDay || slaStatus === 'Completed'
-                            const isActive = stage.day === currentDay && slaStatus !== 'Completed'
+                            const isComplete = stage.day < currentStage || slaStatus === 'Completed'
+                            const isActive = stage.day === currentStage && slaStatus !== 'Completed'
                             return (
                                 <div
                                     key={stage.day}
@@ -64,7 +64,7 @@ export function AuditTypeWorkflow({ auditType, status, startDate, compact = fals
                                         </div>
                                         <div>
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <p className="text-sm font-bold text-gray-900">Day {stage.day}: {stage.title}</p>
+                                                <p className="text-sm font-bold text-gray-900">Stage {stage.day}: {stage.title}</p>
                                                 {isActive && <span className="rounded-full bg-[#002776] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Active</span>}
                                             </div>
                                             <p className="mt-0.5 text-xs leading-5 text-gray-500">{stage.description}</p>

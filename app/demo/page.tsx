@@ -88,7 +88,7 @@ export default function FullAuditDemoPage() {
       <section className="mx-auto grid max-w-7xl gap-4 px-5 py-5 md:grid-cols-4">
         {[
           ["Overall readiness", "86%", "14 checklist items remain"],
-          ["Days saved", "7.5", "Based on import and review automation"],
+          ["Workflow support", "Active", "Based on import and review automation"],
           ["GST variance", "₹1.03L", "3 exceptions need manager review"],
           ["Client actions", "2", "MRL approval and bank confirmation"],
         ].map(([label, value, detail]) => (

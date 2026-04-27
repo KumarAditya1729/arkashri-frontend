@@ -110,10 +110,8 @@ export function AuditCompletionEstimator({ auditType, status, startDate }: Audit
     // Derive dates
     const totalDays = dur.arkashri
     const daysElapsed = Math.max(1, Math.round((now.getTime() - started.getTime()) / (1000 * 60 * 60 * 24)))
-    const expectedETA = addWorkingDays(started, totalDays)
     const projectedETA = addWorkingDays(started, Math.round((100 / Math.max(progress, 1)) * daysElapsed))
     const remaining = daysUntil(projectedETA)
-    const timeSaved = dur.traditional - dur.arkashri
 
     // Velocity: are we ahead / on track / delayed?
     const expectedProgress = Math.min(100, Math.round((daysElapsed / totalDays) * 100))
@@ -188,21 +186,21 @@ export function AuditCompletionEstimator({ auditType, status, startDate }: Audit
                         color: 'text-[#002776]', bg: 'bg-blue-50',
                     },
                     {
-                        icon: Clock, label: 'Days Elapsed',
+                        icon: Clock, label: 'Progress Window',
                         value: daysElapsed,
-                        sub: `of ${totalDays}d total (est.)`,
+                        sub: 'elapsed in engagement plan',
                         color: 'text-gray-700', bg: 'bg-gray-50',
                     },
                     {
-                        icon: Zap, label: 'Time Saved',
-                        value: `${timeSaved}d`,
-                        sub: `vs ${dur.traditional}d manual`,
+                        icon: Zap, label: 'Automation Support',
+                        value: 'Active',
+                        sub: 'import and review assistance',
                         color: 'text-emerald-600', bg: 'bg-emerald-50',
                     },
                     {
-                        icon: TrendingUp, label: 'Automation Lift',
-                        value: `${Math.round((timeSaved / dur.traditional) * 100)}%`,
-                        sub: 'faster than traditional',
+                        icon: TrendingUp, label: 'Timeline Tracking',
+                        value: `${Math.max(0, delta)}%`,
+                        sub: delta >= 0 ? 'ahead of expected progress' : 'needs review',
                         color: 'text-purple-600', bg: 'bg-purple-50',
                     },
                 ].map(m => (
@@ -285,11 +283,10 @@ export function AuditCompletionEstimator({ auditType, status, startDate }: Audit
             <div className="flex items-start gap-3 bg-gradient-to-r from-[#001a54]/5 to-blue-50 border border-blue-100 rounded-xl p-4">
                 <Zap className="w-4 h-4 text-[#002776] flex-shrink-0 mt-0.5" />
                 <div>
-                    <div className="text-xs font-bold text-[#002776] mb-0.5">Arkashri Automation Speed-Up</div>
+                    <div className="text-xs font-bold text-[#002776] mb-0.5">Arkashri Workflow Support</div>
                     <p className="text-xs text-gray-600 leading-relaxed">
-                        Traditional <strong>{auditType}</strong> takes <strong>{dur.traditional} calendar days</strong>.
-                        Arkashri's 93% automation engine completes it in <strong className="text-emerald-600">{dur.arkashri} days</strong>,
-                        saving <strong>{timeSaved} days</strong> ({Math.round((timeSaved / dur.traditional) * 100)}% faster).
+                        Arkashri supports the <strong>{auditType}</strong> with a structured engagement plan,
+                        evidence tracking, review checkpoints and report readiness signals.
                         {' '}Current active phase: <strong>{currentPhase.name}</strong>.
                     </p>
                 </div>
