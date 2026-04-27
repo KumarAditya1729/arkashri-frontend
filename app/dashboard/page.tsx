@@ -4,9 +4,19 @@ import { AuditShell } from '@/components/layout/AuditShell'
 import { AutomationScoreWidget } from '@/components/audit/AutomationScoreWidget'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, Activity, Users, FileWarning, TrendingUp, Loader2 } from 'lucide-react'
+import { ArrowRight, Activity, Users, FileWarning, TrendingUp, Loader2, CalendarClock, ClipboardCheck, FileText, FolderOpen } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { getAutomationScore, AutomationScoreResponse, getEngagements, EngagementResponse, ApiError } from '@/lib/api'
+import { getAutomationScore, AutomationScoreResponse, getEngagements, ApiError } from '@/lib/api'
+import { AUDIT_TYPE_DEFINITIONS, getSlaStatus, normalizeAuditTypeTitle, SLA_STATUS_STYLES, type AuditSlaStatus } from '@/lib/audit-types'
+
+type DashboardEngagement = {
+    id: string
+    type: string
+    client: string
+    status: string
+    risk: string
+    createdAt: string | null
+}
 
 // Dynamically fetched
 const statusColors: Record<string, string> = {
@@ -32,6 +42,7 @@ const auditIcons: Record<string, string> = {
     'External Audit': '🔬',
     'Statutory Audit': '📜',
     'Tax Audit': '🧾',
+    'GST Audit / GST Reconciliation': '🧾',
     'Compliance Audit': '✅',
     'Operational Audit': '⚙️',
     'IT Audit': '💻',
@@ -42,15 +53,22 @@ const auditIcons: Record<string, string> = {
     'Cost Audit (CRA-3)': '💳',
     'Social Audit': '🤝',
     'Inventory Audit': '📦',
+    'Stock Audit': '📦',
+    'Bank / Loan Audit': '🏦',
     'Single Audit (US Federal / USAS)': '🏛️',
 }
 
 export default function Dashboard() {
-    const [ENGAGEMENTS, setEngagements] = useState<any[]>([])
+    const [ENGAGEMENTS, setEngagements] = useState<DashboardEngagement[]>([])
 
     const inProgress = ENGAGEMENTS.filter(e => e.status === 'In Progress').length
     const critical = ENGAGEMENTS.filter(e => e.risk === 'Critical').length
     const pending = ENGAGEMENTS.filter(e => e.status === 'Planning' || e.status === 'Not Started').length
+    const slaSummary = ENGAGEMENTS.reduce<Record<AuditSlaStatus, number>>((acc, engagement) => {
+        const status = getSlaStatus({ status: engagement.status, startDate: engagement.createdAt })
+        acc[status] += 1
+        return acc
+    }, { 'On Track': 0, 'At Risk': 0, Delayed: 0, Completed: 0 })
 
     const router = useRouter()
     const [automationData, setAutomationData] = useState<AutomationScoreResponse | null>(null)
@@ -74,15 +92,16 @@ export default function Dashboard() {
             // Map EngagementResponse to local format for UI
             setEngagements(data.map(d => ({
                 id: d.id,
-                type: d.engagement_type,
+                type: normalizeAuditTypeTitle(d.engagement_type),
                 client: d.client_name,
                 status: d.status === 'FIELD_WORK' ? 'In Progress' :
                     d.status === 'REVIEW' ? 'Review' :
                         d.status === 'COMPLETED' || d.status === 'SEALED' ? 'Completed' : 'Planning',
-                risk: 'Medium'
+                risk: 'Medium',
+                createdAt: d.created_at,
             })))
         })
-    }, [])
+    }, [router])
 
     return (
         <AuditShell>
@@ -111,6 +130,65 @@ export default function Dashboard() {
                         </div>
                     </div>
                 ))}
+            </div>
+
+            {/* India CA audit launchpad */}
+            <div className="mb-8 grid gap-5 xl:grid-cols-[1.4fr_0.6fr]">
+                <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                            <h2 className="text-xl font-black text-[#002776]">Start a 7-Day Audit Workflow</h2>
+                            <p className="text-sm text-gray-500">Choose the Indian CA workflow first, then Arkashri guides documents, checklist, review and Day 7 reporting.</p>
+                        </div>
+                        <Link href="/engagement-overview" className="hidden shrink-0 rounded-xl bg-[#002776] px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-[#001a54] md:inline-flex">
+                            New Engagement
+                        </Link>
+                    </div>
+                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                        {AUDIT_TYPE_DEFINITIONS.map(auditType => (
+                            <Link href="/engagement-overview" key={auditType.slug} className="group rounded-xl border border-gray-100 bg-gray-50 p-4 transition-all hover:border-[#002776] hover:bg-blue-50">
+                                <div className="mb-2 flex items-center justify-between">
+                                    <span className="text-sm font-black text-gray-900">{auditType.title}</span>
+                                    <ArrowRight className="h-4 w-4 text-gray-300 transition-colors group-hover:text-[#002776]" />
+                                </div>
+                                <p className="line-clamp-2 text-xs leading-5 text-gray-500">{auditType.shortDescription}</p>
+                                <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-white px-2 py-1 text-[10px] font-black uppercase tracking-wide text-[#002776]">
+                                    <CalendarClock className="h-3 w-3" /> 7-day target
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+                    <h2 className="text-lg font-black text-[#002776]">7-Day SLA Summary</h2>
+                    <p className="mb-4 text-sm text-gray-500">Demo-ready status logic across active engagements.</p>
+                    <div className="space-y-3">
+                        {[
+                            { label: 'Due within 7 days', value: ENGAGEMENTS.length, icon: CalendarClock, style: 'bg-blue-50 text-blue-700' },
+                            { label: 'Evidence pending', value: Math.max(0, ENGAGEMENTS.length - slaSummary.Completed), icon: FolderOpen, style: 'bg-amber-50 text-amber-700' },
+                            { label: 'Review pending', value: pending, icon: ClipboardCheck, style: 'bg-purple-50 text-purple-700' },
+                            { label: 'Reports ready', value: slaSummary.Completed, icon: FileText, style: 'bg-green-50 text-green-700' },
+                        ].map(item => (
+                            <div key={item.label} className="flex items-center justify-between rounded-xl border border-gray-100 p-3">
+                                <div className="flex items-center gap-2">
+                                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${item.style}`}>
+                                        <item.icon className="h-4 w-4" />
+                                    </div>
+                                    <span className="text-sm font-semibold text-gray-700">{item.label}</span>
+                                </div>
+                                <span className="text-lg font-black text-gray-900">{item.value}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                        {(Object.keys(slaSummary) as AuditSlaStatus[]).map(status => (
+                            <div key={status} className={`rounded-lg border px-3 py-2 text-center text-xs font-bold ${SLA_STATUS_STYLES[status]}`}>
+                                {status}: {slaSummary[status]}
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* Automation Score Widget — full width */}

@@ -4,9 +4,10 @@ import { PhaseApprovalGateway } from '@/components/audit/PhaseApprovalGateway'
 import { WidgetErrorBoundary } from '@/components/layout/WidgetErrorBoundary'
 import { AuditCompletionEstimator } from '@/components/audit/AuditCompletionEstimator'
 import PartnerSignOff from '@/components/audit/PartnerSignOff'
-import { getEngagement } from '@/lib/api'
+import { AuditTypeWorkflow } from '@/components/audit/AuditTypeWorkflow'
 import { registryByShortId } from '@/lib/engagementRegistry'
 import { getBackendBaseUrl } from '@/lib/env'
+import { normalizeAuditTypeTitle } from '@/lib/audit-types'
 import { cookies } from 'next/headers'
 
 // ─── Local fallback registry ──────────────────────────────────────────────────
@@ -23,6 +24,7 @@ const TYPE_BADGE_COLORS: Record<string, string> = {
     'External Audit': 'bg-purple-100 text-purple-800',
     'Statutory Audit': 'bg-teal-100 text-teal-800',
     'Tax Audit': 'bg-orange-100 text-orange-800',
+    'GST Audit / GST Reconciliation': 'bg-cyan-100 text-cyan-800',
     'Compliance Audit': 'bg-cyan-100 text-cyan-800',
     'Operational Audit': 'bg-amber-100 text-amber-800',
     'IT Audit': 'bg-sky-100 text-sky-800',
@@ -30,6 +32,8 @@ const TYPE_BADGE_COLORS: Record<string, string> = {
     'Performance Audit': 'bg-lime-100 text-lime-800',
     'Quality Audit': 'bg-rose-100 text-rose-800',
     'Environmental Audit': 'bg-emerald-100 text-emerald-800',
+    'Stock Audit': 'bg-lime-100 text-lime-800',
+    'Bank / Loan Audit': 'bg-slate-100 text-slate-800',
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -86,7 +90,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
             if (res.ok) {
                 const liveEng = await res.json()
                 engagementData = {
-                    auditType: liveEng.engagement_type,
+                    auditType: normalizeAuditTypeTitle(liveEng.engagement_type),
                     clientName: liveEng.client_name,
                     status: liveEng.status,
                     sealHash: liveEng.seal_hash,
@@ -173,6 +177,12 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
             <WidgetErrorBoundary fallback={<div className="font-mono text-red-500 bg-red-50 p-4 border border-red-200">System Error: Playbook failed to render.</div>}>
                 <PlaybookRenderer playbook={playbook} />
             </WidgetErrorBoundary>
+
+            <AuditTypeWorkflow
+                auditType={engagementData.auditType}
+                status={engagementData.status}
+                startDate={engagementData.createdAt}
+            />
 
             <WidgetErrorBoundary fallback={<div className="font-mono text-red-500 bg-red-50 p-4 border border-red-200">System Error: Gateway offline.</div>}>
                 <PhaseApprovalGateway

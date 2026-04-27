@@ -6,6 +6,7 @@ import { getBackendBaseUrl } from '@/lib/env'
 import { notFound } from 'next/navigation'
 import { EngagementStateInitializer } from '@/components/audit/EngagementStateInitializer'
 import { cookies } from 'next/headers'
+import { normalizeAuditTypeTitle } from '@/lib/audit-types'
 
 export default async function EngagementLayout({
     children,
@@ -36,7 +37,7 @@ export default async function EngagementLayout({
                 meta = {
                     shortId: id.substring(0, 8),
                     uuid: id,
-                    auditType: liveEng.engagement_type,
+                    auditType: normalizeAuditTypeTitle(liveEng.engagement_type),
                     client: liveEng.client_name,
                     jurisdiction: liveEng.jurisdiction,
                     period: 'LIVE RECORD'
@@ -59,6 +60,7 @@ export default async function EngagementLayout({
         'External Audit': 'bg-purple-100 text-purple-800',
         'Statutory Audit': 'bg-teal-100 text-teal-800',
         'Tax Audit': 'bg-orange-100 text-orange-800',
+        'GST Audit / GST Reconciliation': 'bg-cyan-100 text-cyan-800',
         'Compliance Audit': 'bg-cyan-100 text-cyan-800',
         'Operational Audit': 'bg-amber-100 text-amber-800',
         'IT Audit': 'bg-sky-100 text-sky-800',
@@ -66,6 +68,8 @@ export default async function EngagementLayout({
         'Performance Audit': 'bg-lime-100 text-lime-800',
         'Quality Audit': 'bg-rose-100 text-rose-800',
         'Environmental Audit': 'bg-emerald-100 text-emerald-800',
+        'Stock Audit': 'bg-lime-100 text-lime-800',
+        'Bank / Loan Audit': 'bg-slate-100 text-slate-800',
     }
 
     const badgeClass = TYPE_BADGE_COLORS[meta.auditType] ?? 'bg-gray-100 text-gray-800'
