@@ -57,7 +57,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             })
             ticket = ticketRes.ticket
         } catch (err) {
-            console.error('Failed to fetch WS ticket:', err)
+            console.warn('WebSocket ticket unavailable; continuing without realtime updates.', err)
             scheduleReconnect(auth)
             return
         }
@@ -82,7 +82,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
                     const data = JSON.parse(event.data)
                     setLastEvent(data)
                 } catch (err) {
-                    console.error('Failed to parse WS message:', err)
+                    console.warn('Failed to parse WS message:', err)
                 }
             }
 
@@ -99,7 +99,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
                 socket.close()
             }
         } catch (error) {
-            console.error('Failed to create WebSocket:', error)
+            console.warn('Failed to create WebSocket:', error)
             scheduleReconnect(auth)
         }
     }, [scheduleReconnect])
