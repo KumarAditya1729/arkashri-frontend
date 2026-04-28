@@ -19,11 +19,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     const [lastEvent, setLastEvent] = useState<any | null>(null)
     const socketRef = useRef<WebSocket | null>(null)
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+    const connectWsRef = useRef<((auth: boolean) => void) | null>(null)
     const attemptRef = useRef(0)
     const mountedRef = useRef(true)
+    const ticketFailureWarnedRef = useRef(false)
 
     const user = useAuthStore((s) => s.user)
     const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
+    const backendLinked = useAuthStore((s) => s.backendLinked)
 
     const getBackoffMs = (attempt: number) =>
         Math.min(BACKOFF_BASE_MS * Math.pow(2, attempt), BACKOFF_MAX_MS)
@@ -35,9 +38,9 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         console.log(`WebSocket: reconnecting in ${delay}ms (attempt ${attemptRef.current + 1})`)
         reconnectTimeoutRef.current = setTimeout(() => {
             attemptRef.current += 1
-            connectWs(auth)
+            connectWsRef.current?.(auth)
         }, delay)
-    }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    }, [])
 
     const connectWs = useCallback(async (auth: boolean) => {
         if (!auth || !mountedRef.current) return
@@ -57,7 +60,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             })
             ticket = ticketRes.ticket
         } catch (err) {
-            console.warn('WebSocket ticket unavailable; continuing without realtime updates.', err)
+            if (!ticketFailureWarnedRef.current) {
+                console.warn('WebSocket ticket unavailable; continuing without realtime updates.', err)
+                ticketFailureWarnedRef.current = true
+            }
             scheduleReconnect(auth)
             return
         }
@@ -105,8 +111,12 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     }, [scheduleReconnect])
 
     useEffect(() => {
+        connectWsRef.current = connectWs
+    }, [connectWs])
+
+    useEffect(() => {
         mountedRef.current = true
-        if (isAuthenticated && user) {
+        if (isAuthenticated && user && backendLinked) {
             const t = setTimeout(() => connectWs(true), 1000)
             return () => clearTimeout(t)
         } else {
@@ -118,7 +128,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             socketRef.current?.close()
             if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current)
         }
-    }, [isAuthenticated, user, connectWs])
+    }, [isAuthenticated, user, backendLinked, connectWs])
 
     return (
         <WebSocketContext.Provider value={{ isConnected, lastEvent }}>
