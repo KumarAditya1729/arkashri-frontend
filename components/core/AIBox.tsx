@@ -1,13 +1,14 @@
 'use client'
 
 import { useAuditStore } from '../../store/auditStore'
-import { Bot, Info, Crosshair, ExternalLink, Activity, Loader2, ShieldAlert } from 'lucide-react'
+import { Bot, Info, Crosshair, ExternalLink, Activity, Loader2, ShieldAlert, Briefcase, FolderOpen, PlusCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { DisclaimerBadge } from './DisclaimerBadge'
 import { useState, useEffect } from 'react'
 import { apiFetch } from '@/lib/api'
+import Link from 'next/link'
 
 interface ContextInsight {
     suggestion: string;
@@ -56,7 +57,7 @@ export function AIBox() {
     const contextTopic = currentStage === 'Dashboard' ? 'Engagement Overview' : 
                          currentStage === 'Risks' ? 'Risk Assessment' : 'Process Execution'
     
-    const displaySuggestion = insight ? insight.suggestion : "Please select or create an engagement to receive live contextual insights."
+    const displaySuggestion = insight ? insight.suggestion : "Create or select an engagement to receive contextual AI suggestions."
     const displayConfidence = insight ? Math.round(insight.confidence) : 0
     const displayBindings = insight ? insight.regulatory_bindings : []
 
@@ -121,6 +122,28 @@ export function AIBox() {
                                                 <Activity className="w-3 h-3 mr-1" /> Confidence
                                             </span>
                                             <span className="font-bold text-indigo-700">{displayConfidence}%</span>
+                                        </div>
+                                    )}
+
+                                    {!engagementId && (
+                                        <div className="grid gap-2">
+                                            {[
+                                                { href: '/engagement-overview', label: 'New Engagement', icon: PlusCircle },
+                                                { href: '/engagement-overview', label: 'Engagement Overview', icon: Briefcase },
+                                                { href: '/evidence', label: 'Upload Evidence', icon: FolderOpen },
+                                            ].map(item => (
+                                                <Link
+                                                    key={`${item.href}-${item.label}`}
+                                                    href={item.href}
+                                                    className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-700 transition-colors hover:border-[#002776] hover:bg-blue-50 hover:text-[#002776]"
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        <item.icon className="h-3.5 w-3.5" />
+                                                        {item.label}
+                                                    </span>
+                                                    <ExternalLink className="h-3 w-3 text-gray-300" />
+                                                </Link>
+                                            ))}
                                         </div>
                                     )}
                                 </>
