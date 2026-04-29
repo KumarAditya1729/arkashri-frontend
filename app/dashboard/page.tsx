@@ -121,7 +121,7 @@ export default function Dashboard() {
         }).finally(() => setScoreLoading(false))
 
         getEngagements().then(data => {
-            // Map EngagementResponse to local format for UI
+            // Map EngagementResponse into the dashboard view model.
             setEngagements(data.map(d => ({
                 id: d.id,
                 type: normalizeAuditTypeTitle(d.auditType ?? d.engagement_type),

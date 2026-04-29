@@ -15,9 +15,7 @@ const issuerColor: Record<string, string> = {
 }
 const impactColor: Record<string, string> = { High: 'text-red-600 bg-red-50', Medium: 'text-orange-600 bg-orange-50', Low: 'text-gray-500 bg-gray-100' }
 
-// ─── Local seed (shown when DB has no regulatory documents) ───────────────────
-
-interface LocalDoc {
+interface RegulatoryDocView {
     id: string | number
     title: string
     issuer: string
@@ -27,12 +25,9 @@ interface LocalDoc {
     summary: string
     source_url?: string | null
     is_promoted: boolean
-    isLocal?: boolean
 }
 
-const SEED_DOCS: LocalDoc[] = []
-
-function liveToLocal(d: RegulatoryDoc): LocalDoc {
+function toRegulatoryDocView(d: RegulatoryDoc): RegulatoryDocView {
     // Try to parse issuer from title if not in issuer field
     const knownIssuers = ['ICAI', 'SEBI', 'MCA', 'RBI', 'IASB', 'PCAOB']
     const detectedIssuer = knownIssuers.find(i => d.title?.toUpperCase().includes(i) || d.issuer?.toUpperCase().includes(i)) ?? d.issuer ?? 'ICAI'
@@ -51,7 +46,7 @@ function liveToLocal(d: RegulatoryDoc): LocalDoc {
 }
 
 export default function RegulatoryUpdatesPage() {
-    const [docs, setDocs] = useState<LocalDoc[]>(SEED_DOCS)
+    const [docs, setDocs] = useState<RegulatoryDocView[]>([])
     const [isLive, setIsLive] = useState(false)
     const [loading, setLoading] = useState(false)
     const [promoting, setPromoting] = useState<string | number | null>(null)
@@ -68,17 +63,22 @@ export default function RegulatoryUpdatesPage() {
         setLoading(true)
         getRegulatoryDocuments('IN').then(data => {
             if (data.length > 0) {
-                setDocs(data.map(liveToLocal))
+                setDocs(data.map(toRegulatoryDocView))
                 setIsLive(true)
                 setExpanded(data[0].id)
             }
         }).finally(() => setLoading(false))
     }, [])
 
-    const acknowledge = async (doc: LocalDoc) => {
-        if (!doc.isLocal && typeof doc.id === 'number') {
+    const acknowledge = async (doc: RegulatoryDocView) => {
+        if (typeof doc.id === 'number') {
             setPromoting(doc.id)
-            try { await promoteRegulatoryDoc(doc.id) } catch { /* fallback */ }
+            try {
+                await promoteRegulatoryDoc(doc.id)
+            } catch {
+                setPromoting(null)
+                return
+            }
             setPromoting(null)
         }
         setDocs(ds => ds.map(d => d.id === doc.id ? { ...d, is_promoted: true } : d))
@@ -130,7 +130,7 @@ export default function RegulatoryUpdatesPage() {
                             </span>
                         ) : (
                             <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />LOCAL
+                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />NO LIVE DATA
                             </span>
                         )}
                         {loading && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}

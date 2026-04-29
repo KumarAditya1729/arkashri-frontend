@@ -2,11 +2,11 @@
 
 import { useState, useEffect, use } from 'react'
 import { Eye, CheckCircle2, XCircle, MessageSquare, Clock, ChevronDown, ChevronUp, Send, Loader2 } from 'lucide-react'
-import { getApprovals, actionApproval, ApprovalResponse } from '@/lib/api'
+import { getApprovals, actionApproval } from '@/lib/api'
 
 type ReviewStatus = 'Approved' | 'Changes Required' | 'Pending' | 'In Review'
 
-interface LocalReview {
+interface ReviewItem {
     id: string
     section: string
     description: string
@@ -17,7 +17,7 @@ interface LocalReview {
     backendId?: string
 }
 
-const SEED_ITEMS: LocalReview[] = []
+const EMPTY_REVIEW_ITEMS: ReviewItem[] = []
 
 const statusConfig: Record<ReviewStatus, { icon: any; color: string; bg: string }> = {
     Approved: { icon: CheckCircle2, color: 'text-green-700', bg: 'bg-green-100' },
@@ -35,44 +35,54 @@ function approvalStatusToReview(s: string): ReviewStatus {
 
 export default function ReviewPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params)
-    const [items, setItems] = useState<LocalReview[]>(SEED_ITEMS)
+    const [items, setItems] = useState<ReviewItem[]>(EMPTY_REVIEW_ITEMS)
     const [isLive, setIsLive] = useState(false)
     const [loading, setLoading] = useState(false)
     const [expanded, setExpanded] = useState<string | null>('REV-003')
     const [newComment, setNewComment] = useState<Record<string, string>>({})
     const [actioning, setActioning] = useState<string | null>(null)
+    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
-        setLoading(true)
-        Promise.all([
-            getApprovals(),
-            import('@/lib/api').then(m => m.listAuditRuns(id).catch(() => []))
-        ]).then(([data, runs]) => {
-            const runIds = new Set(runs.map((r: any) => r.id))
-            const engagementApprovals = data.filter((a: any) => a.payload?.run_id && runIds.has(a.payload.run_id))
+        let cancelled = false
+        const loadApprovals = async () => {
+            setLoading(true)
+            try {
+                const [data, runs] = await Promise.all([
+                    getApprovals(),
+                    import('@/lib/api').then(m => m.listAuditRuns(id).catch(() => []))
+                ])
+                if (cancelled) return
+                const runIds = new Set(runs.map((r: any) => r.id))
+                const engagementApprovals = data.filter((a: any) => a.payload?.run_id && runIds.has(a.payload.run_id))
 
-            if (engagementApprovals.length > 0) {
-                const mapped: LocalReview[] = engagementApprovals.map((a: any, i: number) => ({
-                    id: a.id.slice(0, 8).toUpperCase(),
-                    section: a.reference_type || `Workpaper ${i + 1}`,
-                    description: a.reason || 'Approval request',
-                    preparedBy: a.requested_by,
-                    reviewedBy: 'Senior Auditor',
-                    status: approvalStatusToReview(a.status),
-                    backendId: a.id,
-                    comments: (a.actions || []).filter((ac: any) => ac.action_type === 'COMMENTED').map((ac: any) => ({
-                        author: ac.actor_id,
-                        text: ac.notes ?? '',
-                        time: new Date(ac.created_at).toLocaleString(),
-                    })),
-                }))
-                setItems(mapped)
-                setIsLive(true)
-            } else {
-                setItems([])
-                setIsLive(true)
+                if (engagementApprovals.length > 0) {
+                    const mapped: ReviewItem[] = engagementApprovals.map((a: any, i: number) => ({
+                        id: a.id.slice(0, 8).toUpperCase(),
+                        section: a.reference_type || `Workpaper ${i + 1}`,
+                        description: a.reason || 'Approval request',
+                        preparedBy: a.requested_by,
+                        reviewedBy: 'Senior Auditor',
+                        status: approvalStatusToReview(a.status),
+                        backendId: a.id,
+                        comments: (a.actions || []).filter((ac: any) => ac.action_type === 'COMMENTED').map((ac: any) => ({
+                            author: ac.actor_id,
+                            text: ac.notes ?? '',
+                            time: new Date(ac.created_at).toLocaleString(),
+                        })),
+                    }))
+                    setItems(mapped)
+                    setIsLive(true)
+                } else {
+                    setItems([])
+                    setIsLive(true)
+                }
+            } finally {
+                if (!cancelled) setLoading(false)
             }
-        }).finally(() => setLoading(false))
+        }
+        void loadApprovals()
+        return () => { cancelled = true }
     }, [id])
 
     const addComment = async (id_val: string) => {
@@ -81,22 +91,30 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
         
         const item = items.find(it => it.id === id_val)
         if (item?.backendId) {
-            try { await actionApproval(item.backendId, 'COMMENTED', text) } catch { console.error('Failed to save comment') }
+            try { await actionApproval(item.backendId, 'COMMENTED', text) } catch { setError('Comment failed because the production backend is unavailable.'); return }
+        } else {
+            setError('Commenting requires a production backend approval request. No client-side review note is created.')
+            return
         }
         
         setItems(its => its.map(it => it.id === id_val ? {
             ...it,
             comments: [...it.comments, { author: 'Current User', text, time: new Date().toLocaleString() }]
         } : it))
+        setError(null)
         setNewComment(n => ({ ...n, [id_val]: '' }))
     }
 
     const approve = async (id_val: string) => {
         const item = items.find(it => it.id === id_val)
         setActioning(id_val)
-        if (item?.backendId) {
-            try { await actionApproval(item.backendId, 'APPROVED', 'Approved via UI') } catch { /* fallback */ }
+        if (!item?.backendId) {
+            setError('Approval requires a production backend approval request. No client-side approval state is created.')
+            setActioning(null)
+            return
         }
+        try { await actionApproval(item.backendId, 'APPROVED', 'Approved via UI') } catch { setError('Approval failed because the production backend is unavailable.'); setActioning(null); return }
+        setError(null)
         setItems(its => its.map(it => it.id === id_val ? { ...it, status: 'Approved' } : it))
         setActioning(null)
     }
@@ -104,9 +122,13 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
     const requestChanges = async (id_val: string) => {
         const item = items.find(it => it.id === id_val)
         setActioning(id_val)
-        if (item?.backendId) {
-            try { await actionApproval(item.backendId, 'REJECTED', 'Changes requested via UI') } catch { /* fallback */ }
+        if (!item?.backendId) {
+            setError('Review action requires a production backend approval request. No client-side review state is created.')
+            setActioning(null)
+            return
         }
+        try { await actionApproval(item.backendId, 'REJECTED', 'Changes requested via UI') } catch { setError('Review action failed because the production backend is unavailable.'); setActioning(null); return }
+        setError(null)
         setItems(its => its.map(it => it.id === id_val ? { ...it, status: 'Changes Required' } : it))
         setActioning(null)
     }
@@ -122,12 +144,13 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
                         </span>
                     ) : (
                         <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />LOCAL
+                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />NO LIVE DATA
                         </span>
                     )}
                     {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
                 </div>
                 <p className="text-gray-500 mt-1 text-xs text-balance">Maker-checker review of all workpapers for ENG-{id} before final sign-off.</p>
+                {error && <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{error}</p>}
             </div>
 
             {/* Summary */}

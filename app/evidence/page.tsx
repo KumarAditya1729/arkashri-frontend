@@ -2,14 +2,11 @@
 
 import { AuditShell } from '@/components/layout/AuditShell'
 import { useState, useEffect, useRef } from 'react'
-import { Upload, Link as LinkIcon, FileText, Image, Eye, Trash2, Plus, CheckCircle2, Clock, Loader2, Database, ShieldCheck } from 'lucide-react'
+import { Upload, Link as LinkIcon, FileText, Image, Trash2, Plus, CheckCircle2, Clock, Loader2, ShieldCheck } from 'lucide-react'
 import { listEvidence, uploadEvidence, deleteEvidence, anchorMultiChainEvidence, EvidenceResponse } from '@/lib/api'
 import { ENGAGEMENT_REGISTRY } from '@/lib/engagementRegistry'
 
 const getActiveEngagementUuid = () => ENGAGEMENT_REGISTRY[0]?.uuid ?? null
-
-type EvidenceType = 'Document' | 'Screenshot' | 'Workpaper' | 'Confirmation' | 'External Link'
-type EvidenceStatus = 'Reviewed' | 'Pending Review' | 'Rejected'
 
 const typeIcon: Record<string, any> = { Document: FileText, Screenshot: Image, Confirmation: CheckCircle2, Workpaper: FileText, 'External Link': LinkIcon }
 const typeColor: Record<string, string> = { Document: 'text-blue-600 bg-blue-50', Screenshot: 'text-purple-600 bg-purple-50', Confirmation: 'text-green-600 bg-green-50', Workpaper: 'text-orange-600 bg-orange-50', 'External Link': 'text-gray-600 bg-gray-50' }
@@ -19,71 +16,70 @@ const statusConfig: Record<string, { color: string; icon: any }> = {
     Rejected: { color: 'text-red-700 bg-red-100', icon: Trash2 },
 }
 
-const SEED_EVIDENCE: EvidenceResponse[] = []
-
-function toEvType(filename: string): string {
-    if (/\.(png|jpg|jpeg|gif)$/i.test(filename)) return 'Screenshot'
-    if (/\.(xlsx|xls|csv)$/i.test(filename)) return 'Workpaper'
-    return 'Document'
-}
+const EMPTY_EVIDENCE: EvidenceResponse[] = []
 
 export default function EvidencePage() {
     const uuid = getActiveEngagementUuid()
-    const [evidence, setEvidence] = useState<EvidenceResponse[]>(SEED_EVIDENCE)
+    const [evidence, setEvidence] = useState<EvidenceResponse[]>(EMPTY_EVIDENCE)
     const [isLive, setIsLive] = useState(false)
     const [loading, setLoading] = useState(false)
     const [uploading, setUploading] = useState(false)
     const [dragOver, setDragOver] = useState(false)
     const [filter, setFilter] = useState<string>('All')
+    const [error, setError] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
     
-    // Evidex States
+    // Evidex state mirrors backend-confirmed anchoring only.
     const [anchoringIds, setAnchoringIds] = useState<Set<string>>(new Set())
     const [anchoredIds, setAnchoredIds] = useState<Set<string>>(new Set())
 
     useEffect(() => {
         if (!uuid) return
-        setLoading(true)
-        listEvidence(uuid).then(data => {
-            if (data.length > 0) { setEvidence(data); setIsLive(true) }
-        }).finally(() => setLoading(false))
+        let cancelled = false
+        const loadEvidence = async () => {
+            setLoading(true)
+            try {
+                const data = await listEvidence(uuid)
+                if (!cancelled && data.length > 0) { setEvidence(data); setIsLive(true) }
+            } finally {
+                if (!cancelled) setLoading(false)
+            }
+        }
+        void loadEvidence()
+        return () => { cancelled = true }
     }, [uuid])
 
     const handleFiles = async (files: FileList | File[]) => {
+        if (!uuid) {
+            setError('Evidence upload requires a production engagement UUID. No client-side evidence records are created.')
+            return
+        }
         const arr = Array.from(files)
         setUploading(true)
         for (const file of arr) {
-            if (uuid) {
-                try {
-                    const created = await uploadEvidence(uuid, file)
-                    setEvidence(ev => [created, ...ev])
-                    setIsLive(true)
-                } catch {
-                    // Local fallback
-                    const local: EvidenceResponse = {
-                        id: crypto.randomUUID(), engagement_id: '', evd_ref: `EVD-${evidence.length + 1}`.padStart(7, '0'),
-                        file_name: file.name, file_path: '', file_size_kb: `${(file.size / 1024).toFixed(0)} KB`,
-                        evidence_type: toEvType(file.name), test_ref: null, uploaded_by: 'Current User',
-                        ev_status: 'Pending Review', uploaded_at: new Date().toISOString(),
-                    }
-                    setEvidence(ev => [local, ...ev])
-                }
-            } else {
-                const local: EvidenceResponse = {
-                    id: crypto.randomUUID(), engagement_id: '', evd_ref: `EVD-${evidence.length + 1}`.padStart(7, '0'),
-                    file_name: file.name, file_path: '', file_size_kb: `${(file.size / 1024).toFixed(0)} KB`,
-                    evidence_type: toEvType(file.name), test_ref: null, uploaded_by: 'Current User',
-                    ev_status: 'Pending Review', uploaded_at: new Date().toISOString(),
-                }
-                setEvidence(ev => [local, ...ev])
+            try {
+                const created = await uploadEvidence(uuid, file)
+                setEvidence(ev => [created, ...ev])
+                setIsLive(true)
+                setError(null)
+            } catch {
+                setError('Evidence upload failed because the production backend is unavailable.')
             }
         }
         setUploading(false)
     }
 
     const handleDelete = async (item: EvidenceResponse) => {
-        if (uuid && !item.id.startsWith('local-')) {
-            try { await deleteEvidence(uuid, item.id) } catch { /* fallback */ }
+        if (uuid && item.id) {
+            try {
+                await deleteEvidence(uuid, item.id)
+            } catch {
+                setError('Evidence deletion failed because the production backend is unavailable.')
+                return
+            }
+        } else {
+            setError('Evidence deletion requires a production backend record.')
+            return
         }
         setEvidence(ev => ev.filter(e => e.id !== item.id))
     }
@@ -91,20 +87,15 @@ export default function EvidencePage() {
     const handleAnchor = async (item: EvidenceResponse) => {
         setAnchoringIds(prev => new Set(prev).add(item.id))
         try {
-            let hash = 'hash-' + item.id;
-            try {
-                // Generate a real SHA-256 hash if possible
-                const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${item.file_name}:${item.id}`));
-                hash = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
-            } catch (e) {}
-            
-            // Call Evidex API
+            const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${item.file_name}:${item.id}`))
+            const hash = Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('')
+
             await anchorMultiChainEvidence(hash, { fileName: item.file_name })
-        } catch (e) {
-            // Silently fallback if backend is not reachable for the demo
+            setAnchoredIds(prev => new Set(prev).add(item.id))
+        } catch {
+            setError('Evidence anchoring failed because the production backend is unavailable.')
         }
-        
-        setAnchoredIds(prev => new Set(prev).add(item.id))
+
         setAnchoringIds(prev => {
             const next = new Set(prev)
             next.delete(item.id)
@@ -127,12 +118,13 @@ export default function EvidencePage() {
                             </span>
                         ) : (
                             <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />LOCAL
+        <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />NO LIVE DATA
                             </span>
                         )}
                         {(loading || uploading) && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
                     </div>
                     <p className="text-gray-500 text-sm">Upload, link, and manage all audit evidence and working papers.</p>
+                    {error && <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{error}</p>}
                 </div>
                 <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 bg-[#002776] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#001a54] transition-colors shadow-sm">
                     <Plus className="w-4 h-4" /> Add Evidence
@@ -165,7 +157,7 @@ export default function EvidencePage() {
                 {uploading ? (
                     <><Loader2 className="w-8 h-8 text-[#002776] mx-auto mb-2 animate-spin" /><p className="text-sm font-medium text-[#002776]">Uploading…</p></>
                 ) : (
-                    <><Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" /><p className="text-sm font-medium text-gray-600">Drag & drop files here, or <span className="text-[#002776] hover:underline">browse</span></p><p className="text-xs text-gray-400 mt-1">PDF, XLSX, PNG, JPG — max 50MB per file{uuid ? ' · Saved to backend' : ' · Local only (seed DB to persist)'}</p></>
+                    <><Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" /><p className="text-sm font-medium text-gray-600">Drag & drop files here, or <span className="text-[#002776] hover:underline">browse</span></p><p className="text-xs text-gray-400 mt-1">PDF, XLSX, PNG, JPG — max 50MB per file{uuid ? ' · Saved to production backend' : ' · Production engagement required'}</p></>
                 )}
             </div>
 
@@ -193,7 +185,6 @@ export default function EvidencePage() {
                         {filtered.map(item => {
                             const Icon = typeIcon[item.evidence_type] ?? FileText
                             const statusCfg = statusConfig[item.ev_status] ?? statusConfig['Pending Review']
-                            const StatusIcon = statusCfg.icon
                             const colorClass = typeColor[item.evidence_type] ?? typeColor.Document
                             const isAnchoring = anchoringIds.has(item.id)
                             const isAnchored = anchoredIds.has(item.id)

@@ -5,9 +5,7 @@ import { Plus, AlertTriangle, ShieldAlert, Filter, ArrowUpDown, ChevronRight, Ch
 import { getRisks, createRisk, RiskResponse, RiskLikelihood, RiskImpact, RiskStatus } from '@/lib/api'
 import { getUuid } from '@/lib/engagementRegistry'
 
-// ─── Local seed data (shown when backend unreachable) ─────────────────────────
-
-const SEED_RISKS: RiskResponse[] = []
+const EMPTY_RISKS: RiskResponse[] = []
 
 // ─── Style maps ───────────────────────────────────────────────────────────────
 
@@ -36,12 +34,13 @@ export default function RisksPage({ params }: { params: Promise<{ id: string }> 
     const { id } = use(params)
     const uuid = getUuid(id)
 
-    const [risks, setRisks] = useState<RiskResponse[]>(SEED_RISKS)
+    const [risks, setRisks] = useState<RiskResponse[]>(EMPTY_RISKS)
     const [isLive, setIsLive] = useState(false)
     const [loading, setLoading] = useState(false)
     const [saving, setSaving] = useState(false)
     const [filter, setFilter] = useState<RiskStatus | 'All'>('All')
     const [showAdd, setShowAdd] = useState(false)
+    const [error, setError] = useState<string | null>(null)
     const [newRisk, setNewRisk] = useState({ title: '', area: '', likelihood: 'Medium' as RiskLikelihood, impact: 'Medium' as RiskImpact, owner: '' })
 
     useEffect(() => {
@@ -72,16 +71,16 @@ export default function RisksPage({ params }: { params: Promise<{ id: string }> 
                 setRisks(r => [created, ...r])
                 setIsLive(true)
             } catch {
-                // Fallback: add locally
-                const score = ({ High: 3, Medium: 2, Low: 1 }[newRisk.likelihood]) * ({ Critical: 4, High: 3, Medium: 2, Low: 1 }[newRisk.impact]) * 8
-                const local: RiskResponse = {
-                    id: crypto.randomUUID(), engagement_id: '', risk_ref: `RSK-${String(risks.length + 1).padStart(3, '0')}`,
-                    title: newRisk.title, area: newRisk.area || 'General', likelihood: newRisk.likelihood, impact: newRisk.impact,
-                    risk_score: Math.min(score, 99), owner: newRisk.owner || 'Unassigned', control_ref: null, risk_status: 'Open', created_at: '', updated_at: '',
-                }
-                setRisks(r => [local, ...r])
+                setError('Risk creation failed because the production backend is unavailable.')
+                setSaving(false)
+                return
             }
+        } else {
+            setError('Risk creation requires a production engagement UUID. No client-side risk records are created.')
+            setSaving(false)
+            return
         }
+        setError(null)
         setNewRisk({ title: '', area: '', likelihood: 'Medium', impact: 'Medium', owner: '' })
         setShowAdd(false)
         setSaving(false)
@@ -99,13 +98,14 @@ export default function RisksPage({ params }: { params: Promise<{ id: string }> 
                             </span>
                         ) : (
                             <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />LOCAL
+                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />NO LIVE DATA
                             </span>
                         )}
                         {loading && <Loader2 className="w-3.5 h-3.5 animate-spin text-gray-400" />}
                     </div>
-                    <p className="text-gray-500 text-xs text-balance">Identify, assess, and track audit risks for ENG-{id}.</p>
-                </div>
+                <p className="text-gray-500 text-xs text-balance">Identify, assess, and track audit risks for ENG-{id}.</p>
+                {error && <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{error}</p>}
+            </div>
                 <button onClick={() => setShowAdd(!showAdd)} className="flex items-center gap-2 bg-[#002776] text-white text-xs font-semibold px-4 py-1.5 rounded-lg hover:bg-[#001a54] transition-colors shadow-sm">
                     <Plus className="w-3.5 h-3.5" /> Add Risk
                 </button>

@@ -1,5 +1,4 @@
 import { AuditShell } from '@/components/layout/AuditShell'
-import { PlaybookRenderer } from '@/components/audit/PlaybookRenderer'
 import { PhaseApprovalGateway } from '@/components/audit/PhaseApprovalGateway'
 import { WidgetErrorBoundary } from '@/components/layout/WidgetErrorBoundary'
 import { AuditCompletionEstimator } from '@/components/audit/AuditCompletionEstimator'
@@ -10,12 +9,6 @@ import { getBackendBaseUrl } from '@/lib/env'
 import { normalizeAuditTypeTitle } from '@/lib/audit-types'
 import type { AuditSlaApiStatus, WorkflowReportStatus, WorkflowReviewStatus } from '@/lib/api'
 import { cookies } from 'next/headers'
-
-// ─── Local fallback registry ──────────────────────────────────────────────────
-// Used when the backend is unavailable or the engagement is not yet seeded.
-const LOCAL_REGISTRY: Record<string, { auditType: string; modules: { type: string }[] }> = {}
-
-const DEFAULT_PLAYBOOK = { auditType: 'Audit Engagement', modules: [{ type: 'RiskModule' }] }
 
 const TYPE_BADGE_COLORS: Record<string, string> = {
     'Forensic Audit': 'bg-red-100 text-red-800',
@@ -65,7 +58,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
         reportStatus?: WorkflowReportStatus | null
         isLive: true
     }
-    type LocalData = {
+    type UnavailableData = {
         auditType: string
         clientName: string
         status: string
@@ -83,7 +76,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
         reportStatus: null
         isLive: false
     }
-    type EngagementData = LiveData | LocalData
+    type EngagementData = LiveData | UnavailableData
 
     let engagementData: EngagementData
     let fetchError: string | null = null
@@ -123,19 +116,18 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
                     isLive: true,
                 }
             } else {
-                fetchError = 'Engagement not found in DB. Run seed_engagements.py.'
-                engagementData = buildLocalFallback(shortId, registryEntry)
+                fetchError = 'Engagement not found in the production backend.'
+                engagementData = buildUnavailableEngagement(shortId, registryEntry)
             }
         } catch {
-            fetchError = 'Backend unreachable. Showing local data.'
-            engagementData = buildLocalFallback(shortId, registryEntry)
+            fetchError = 'Backend unreachable. Live engagement data is unavailable.'
+            engagementData = buildUnavailableEngagement(shortId, registryEntry)
         }
     } else {
-        // No UUID yet — local mode
-        engagementData = buildLocalFallback(shortId, registryEntry)
+        fetchError = 'This engagement link is not mapped to a production backend UUID.'
+        engagementData = buildUnavailableEngagement(shortId, registryEntry)
     }
 
-    const playbook = LOCAL_REGISTRY[shortId] ?? DEFAULT_PLAYBOOK
     const badgeClass = TYPE_BADGE_COLORS[engagementData.auditType] ?? 'bg-gray-100 text-gray-800'
 
     return (
@@ -148,7 +140,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
                             {engagementData.auditType}
                         </span>
 
-                        {/* LIVE / LOCAL data source badge */}
+                        {/* LIVE / UNAVAILABLE data source badge */}
                         {engagementData.isLive ? (
                             <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-800 border border-green-200">
                                 <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
@@ -157,7 +149,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
                         ) : (
                             <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
                                 <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                                LOCAL
+                                NO LIVE DATA
                             </span>
                         )}
 
@@ -196,43 +188,55 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
                 </div>
             </div>
 
-            <WidgetErrorBoundary fallback={<div className="font-mono text-red-500 bg-red-50 p-4 border border-red-200">System Error: Playbook failed to render.</div>}>
-                <PlaybookRenderer playbook={playbook} />
-            </WidgetErrorBoundary>
+            {!engagementData.isLive && (
+                <div className="mb-8 rounded-xl border border-dashed border-gray-200 bg-white p-6 text-sm text-gray-600">
+                    <div className="font-bold text-gray-900">Production engagement data required</div>
+                    <p className="mt-2">
+                        Arkashri will not render fabricated playbooks or client facts. Create or sync this engagement
+                        from the backend, then reopen the production UUID-based engagement page.
+                    </p>
+                </div>
+            )}
 
-            <AuditTypeWorkflow
-                auditType={engagementData.auditType}
-                status={engagementData.status}
-                startDate={engagementData.startDate}
-                currentDay={engagementData.currentDay}
-                slaStatus={engagementData.slaStatus}
-                checklistProgress={engagementData.checklistProgress}
-                documentProgress={engagementData.documentProgress}
-                reviewStatus={engagementData.reviewStatus}
-                reportStatus={engagementData.reportStatus}
-            />
-
-            <WidgetErrorBoundary fallback={<div className="font-mono text-red-500 bg-red-50 p-4 border border-red-200">System Error: Gateway offline.</div>}>
-                <PhaseApprovalGateway
-                    currentPhase={
-                        engagementData.status === 'ACCEPTED' ? 'Planning & Risk Assessment' :
-                        engagementData.status === 'IN_PROGRESS' ? 'Evidence Collection' :
-                        engagementData.status === 'UNDER_REVIEW' ? 'Independent Review' :
-                        engagementData.status === 'SEALED' ? 'Report Issuance & Sign-off' :
-                        'Evidence Collection'
-                    }
-                    onApprove={async () => {
-                        console.log("Phase advanced")
-                    }}
+            {engagementData.isLive && (
+                <AuditTypeWorkflow
+                    auditType={engagementData.auditType}
+                    status={engagementData.status}
+                    startDate={engagementData.startDate}
+                    currentDay={engagementData.currentDay}
+                    slaStatus={engagementData.slaStatus}
+                    checklistProgress={engagementData.checklistProgress}
+                    documentProgress={engagementData.documentProgress}
+                    reviewStatus={engagementData.reviewStatus}
+                    reportStatus={engagementData.reportStatus}
                 />
-            </WidgetErrorBoundary>
+            )}
+
+            {engagementData.isLive && (
+                <WidgetErrorBoundary fallback={<div className="font-mono text-red-500 bg-red-50 p-4 border border-red-200">System Error: Gateway offline.</div>}>
+                    <PhaseApprovalGateway
+                        currentPhase={
+                            engagementData.status === 'ACCEPTED' ? 'Planning & Risk Assessment' :
+                            engagementData.status === 'IN_PROGRESS' ? 'Evidence Collection' :
+                            engagementData.status === 'UNDER_REVIEW' ? 'Independent Review' :
+                            engagementData.status === 'SEALED' ? 'Report Issuance & Sign-off' :
+                            'Evidence Collection'
+                        }
+                        onApprove={async () => {
+                            console.log("Phase advanced")
+                        }}
+                    />
+                </WidgetErrorBoundary>
+            )}
 
             {/* ── Completion Estimator ── */}
-            <AuditCompletionEstimator
-                auditType={engagementData.auditType}
-                status={engagementData.status}
-                startDate={engagementData.createdAt ?? undefined}
-            />
+            {engagementData.isLive && (
+                <AuditCompletionEstimator
+                    auditType={engagementData.auditType}
+                    status={engagementData.status}
+                    startDate={engagementData.createdAt ?? undefined}
+                />
+            )}
 
             {/* Multi-Partner Sign-Off & Seal */}
             {uuid ? (
@@ -245,11 +249,9 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
                 />
             ) : (
                 <div className="mt-8 border-t pt-6">
-                    <div className="text-xs text-gray-400 bg-gray-50 border border-dashed border-gray-200 rounded-lg p-4">
+                    <div className="text-xs text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-lg p-4">
                         <span className="font-semibold text-gray-600">Partner Sign-Off & Seal</span> becomes available once
-                        this engagement is seeded to the backend.
-                        Run <code className="bg-gray-100 px-1 rounded">python3 scripts/seed_engagements.py</code> and update{' '}
-                        <code className="bg-gray-100 px-1 rounded">lib/engagementRegistry.ts</code> with the returned UUIDs.
+                        this engagement exists in the production backend.
                     </div>
                 </div>
             )}
@@ -259,19 +261,18 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function buildLocalFallback(
+function buildUnavailableEngagement(
     shortId: string,
     entry: ReturnType<typeof registryByShortId>,
 ): { auditType: string; clientName: string; status: string; sealHash: null; sealedAt: null; jurisdiction: string; standardsFramework: string; createdAt: null; startDate: null; currentDay: null; slaStatus: null; checklistProgress: null; documentProgress: null; reviewStatus: null; reportStatus: null; isLive: false } {
-    const local = LOCAL_REGISTRY[shortId] ?? DEFAULT_PLAYBOOK
     return {
-        auditType: local.auditType,
-        clientName: entry?.client ?? 'Unknown Client',
-        status: 'Active Collection',
+        auditType: 'Audit Engagement',
+        clientName: entry?.client ?? `Engagement ${shortId}`,
+        status: 'Live Data Required',
         sealHash: null,
         sealedAt: null,
         jurisdiction: entry?.jurisdiction ?? 'IN',
-        standardsFramework: 'ICAI_SA', // Default local metric
+        standardsFramework: 'ICAI_SA',
         createdAt: null,
         startDate: null,
         currentDay: null,

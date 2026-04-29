@@ -26,14 +26,7 @@ export default function SignInPage() {
         setLoading(true)
 
         try {
-            await loginWithBackend(email.trim().toLowerCase(), password, {
-                id: crypto.randomUUID(),
-                fullName: email.split('@')[0],
-                email: email.trim().toLowerCase(),
-                role: 'auditor',
-                organisation: 'Arkashri Systems',
-                avatarInitials: email.substring(0, 2).toUpperCase(),
-            })
+            await loginWithBackend(email.trim().toLowerCase(), password)
             router.push('/dashboard')
         } catch {
             setError('Authentication failed. Please check your credentials and backend connection.')

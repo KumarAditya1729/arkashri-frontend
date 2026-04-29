@@ -13,7 +13,21 @@ export default function ErrorBoundary({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('Arkashri Global Error Caught:', error)
+    const isChunkLoadError =
+      error.name === 'ChunkLoadError' ||
+      error.message.includes('Loading chunk') ||
+      error.message.includes('ChunkLoadError')
+
+    if (isChunkLoadError && typeof window !== 'undefined') {
+      const recoveryKey = 'arkashri-chunk-recovery-attempted'
+      if (!window.sessionStorage.getItem(recoveryKey)) {
+        window.sessionStorage.setItem(recoveryKey, 'true')
+        window.location.reload()
+        return
+      }
+    }
+
+    console.warn('Arkashri recoverable UI error caught:', error)
   }, [error])
 
   return (

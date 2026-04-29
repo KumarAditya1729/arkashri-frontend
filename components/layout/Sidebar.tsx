@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Briefcase, FileSearch, ShieldAlert, CheckSquare, Microscope, FileCheck, Eye, ScrollText, Brain, Network, Activity, BarChart3, Database, Plug } from 'lucide-react'
+import { LayoutDashboard, Briefcase, FileSearch, ShieldAlert, CheckSquare, Microscope, FileCheck, Eye, ScrollText, Network, Activity, BarChart3, Database, Plug } from 'lucide-react'
 import { APP_VERSION, APP_EDITION } from '@/lib/version'
 
 const navSections = [
@@ -33,7 +33,6 @@ const navSections = [
             { href: '/analytics', label: 'Analytics', icon: BarChart3 },
             { href: '/blockchain', label: 'Blockchain Anchoring', icon: Network },
             { href: '/monitoring', label: 'Monitoring', icon: Activity },
-            { href: '/demo', label: 'AI Demo Lab', icon: Brain },
         ],
     },
 ]
