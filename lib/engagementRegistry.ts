@@ -2,8 +2,8 @@
  * Engagement Registry — bridges frontend short display IDs to backend UUIDs.
  *
  * Short IDs are used in the UI for readability; the backend stores UUID4s.
- * Run scripts/seed_engagements.py to seed the backend and update the uuid field
- * once the backend is live. Until then, uuid is null → falls back to local mock data.
+ * Update uuid values only from real backend-created engagements.
+ * When uuid is null, production pages show a "live data required" state.
  */
 
 export interface EngagementMeta {
@@ -15,8 +15,6 @@ export interface EngagementMeta {
     period: string
 }
 
-// To generate real UUIDs, run: python3 scripts/seed_engagements.py
-// Then paste the returned uuid values here.
 export const ENGAGEMENT_REGISTRY: EngagementMeta[] = []
 
 /** Map shortId → registry entry */

@@ -80,7 +80,7 @@ export default function BlockchainPage() {
       setLoading(true)
       const data = await import('@/lib/api').then(m => m.getMultiChainStatus())
       
-      // Map the snake_case backend keys to the expected camelCase local UI keys
+      // Map the snake_case backend keys to the expected camelCase UI keys.
       const formattedNetworks = Object.entries(data).reduce((acc, [key, val]) => {
           acc[key] = {
               connected: val.connected,

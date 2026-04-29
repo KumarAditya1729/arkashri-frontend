@@ -5,20 +5,6 @@ import { useState } from 'react'
 import { FileText, Download, CheckCircle2, AlertTriangle, Eye, Printer, Bot, CalendarClock, ShieldCheck } from 'lucide-react'
 import { SEVEN_DAY_AUDIT_TIMELINE } from '@/lib/audit-types'
 
-const execContent = `The audit of the entity for the specified period was conducted in accordance with Standards on Auditing (SAs) issued by the ICAI. Based on our procedures, we have identified relevant risks and key findings requiring management attention.
-
-The entity's internal control framework is substantially effective, with one deficiency noted in payroll pre-posting variance analysis. We recommend immediate remediation.`
-
-const findingsContent = `1. Revenue Recognition (RSK-001) — CRITICAL: Timing differences of Rs.18L identified across 3 invoices crossing period end. Management explanation received; adjustment booked.
-
-2. Payroll Cut-Off (RSK-002) — HIGH: 3 out of 20 sampled payroll records showed variances exceeding 5% tolerance. Management to strengthen pre-posting review.
-
-3. Related Party Transactions (RSK-004) — CRITICAL: Disclosure in financial statements is incomplete. 2 subsidiary balances excluded from notes. Immediate rectification required before sign-off.`
-
-const controlsContent = `Internal controls over financial reporting are assessed as substantially effective. One material weakness has been identified in the payroll area (CTL-034). All other tested controls (5 of 6) are operating effectively.
-
-We recommend the company strengthen its payroll pre-posting review procedure and implement mandatory dual approval above Rs.5L payroll adjustments.`
-
 interface Section {
     id: string
     title: string
@@ -31,23 +17,23 @@ const SECTIONS: Section[] = [
     {
         id: 'exec',
         title: 'Executive Summary',
-        content: execContent,
-        status: 'complete',
-        wordCount: execContent.trim().split(/\s+/).filter(Boolean).length
+        content: '',
+        status: 'pending',
+        wordCount: 0
     },
     {
         id: 'findings',
         title: 'Key Findings',
-        content: findingsContent,
-        status: 'complete',
-        wordCount: findingsContent.trim().split(/\s+/).filter(Boolean).length
+        content: '',
+        status: 'pending',
+        wordCount: 0
     },
     {
         id: 'controls',
         title: 'Internal Controls',
-        content: controlsContent,
-        status: 'in-progress',
-        wordCount: controlsContent.trim().split(/\s+/).filter(Boolean).length
+        content: '',
+        status: 'pending',
+        wordCount: 0
     }
 ]
 
@@ -67,12 +53,13 @@ export default function ReportPage() {
     const activeSection = sections.find(s => s.id === active) || {
         id: 'exec',
         title: 'Executive Summary',
-        content: execContent,
-        status: 'complete' as const,
-        wordCount: execContent.trim().split(/\s+/).filter(Boolean).length
+        content: '',
+        status: 'pending' as const,
+        wordCount: 0
     }
     const totalWords = Object.values(content).reduce((sum, c) => sum + (c.trim() ? c.trim().split(/\s+/).length : 0), 0)
     const complete = sections.filter(s => s.status === 'complete').length
+    const findingsDocumented = sections.filter(s => s.id === 'findings' && content[s.id]?.trim()).length
 
     return (
         <AuditShell>
@@ -125,7 +112,7 @@ export default function ReportPage() {
                 {[
                     { label: 'Sections Complete', value: `${complete} / ${sections.length}` },
                     { label: 'Total Word Count', value: totalWords.toLocaleString() },
-                    { label: 'Findings Documented', value: '3' },
+                    { label: 'Findings Documented', value: findingsDocumented.toString() },
                 ].map(s => (
                     <div key={s.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
                         <div className="text-2xl font-black text-gray-900">{s.value}</div>
@@ -196,7 +183,7 @@ export default function ReportPage() {
                                 </span>
                             </div>
                             <div className="text-xs text-gray-500 mt-1">
-                                Generated from Phase 4 Human Justification logs. {content[active]?.trim().split(/\s+/).filter(Boolean).length || 0} words total.
+                                Report content appears only after live engagement evidence, review notes, and partner-approved drafting are available. {content[active]?.trim().split(/\s+/).filter(Boolean).length || 0} words total.
                             </div>
                         </div>
                         {activeSection.status === 'complete' && (
@@ -210,8 +197,8 @@ export default function ReportPage() {
                         <div className="flex-1 flex items-center justify-center text-center p-12">
                             <div>
                                 <FileText className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                                <p className="text-gray-400 text-sm font-medium">This section has not been started yet.</p>
-                                <p className="text-gray-300 text-xs mt-1">Complete prior sections before drafting this one.</p>
+                                <p className="text-gray-500 text-sm font-medium">No live report content is available yet.</p>
+                                <p className="text-gray-400 text-xs mt-1">Import engagement data, complete workpapers, and add partner-reviewed notes before drafting this section.</p>
                             </div>
                         </div>
                     ) : (

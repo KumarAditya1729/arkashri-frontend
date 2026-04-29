@@ -4,21 +4,11 @@ import { useAuditStore } from '../../store/auditStore'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, Plus } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import { ThreadedCommentary } from '@/components/audit/ThreadedCommentary'
 
 export function RiskModule() {
     const risks = useAuditStore((state) => state.risks)
-    const addRisk = useAuditStore((state) => state.addRisk)
-
-    const handleAddSampleRisk = () => {
-        addRisk({
-            id: `RSK-${Math.floor(Math.random() * 1000)}`,
-            title: 'Identified Process Anomaly',
-            score: Math.floor(Math.random() * 10) + 1,
-            status: 'Open',
-        })
-    }
 
     return (
         <Card>
@@ -27,8 +17,8 @@ export function RiskModule() {
                     <AlertTriangle className="w-5 h-5 mr-2 text-amber-500" />
                     Risk Assessment Module
                 </CardTitle>
-                <Button variant="outline" size="sm" onClick={handleAddSampleRisk}>
-                    <Plus className="w-4 h-4 mr-1" /> Add Risk
+                <Button variant="outline" size="sm" disabled>
+                    Add Risk
                 </Button>
             </CardHeader>
             <CardContent className="pt-4">

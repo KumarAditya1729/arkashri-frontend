@@ -1,6 +1,6 @@
 # Arkashri Frontend
 
-Arkashri Frontend is the production Next.js application for the Arkashri audit platform. It provides the auditor-facing workspace for Indian CA/audit workflows: engagement dashboards, planning, risks, controls, evidence, review, reporting, ERP/Tally entry points, regulatory updates, client portal screens, and the full audit demo flow.
+Arkashri Frontend is the production Next.js application for the Arkashri audit platform. It provides the auditor-facing workspace for Indian CA/audit workflows: engagement dashboards, planning, risks, controls, evidence, review, reporting, ERP/Tally entry points, regulatory updates, client portal screens, and the full production audit flow.
 
 ## Repository Role
 
@@ -45,7 +45,7 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8001/ws
 Notes:
 
 - `API_URL` is server-side and used by Next.js auth/proxy routes.
-- `NEXT_PUBLIC_API_BASE_URL` is a public fallback for backend calls.
+- `NEXT_PUBLIC_API_BASE_URL` is the public backend URL used by browser-side API calls.
 - `NEXT_PUBLIC_APP_URL` is used for server-side self-calls to the frontend proxy.
 - In production, configure these in Vercel project settings. Do not commit real secrets.
 
@@ -128,14 +128,14 @@ After deployment, verify:
 - Login succeeds and stores session via HttpOnly cookie.
 - Dashboard loads without proxy errors.
 - Engagement creation works.
-- Engagement detail page loads live backend data or a clear fallback.
+- Engagement detail page loads live backend data or a clear unavailable state.
 - Evidence upload UI renders and can call backend evidence endpoints.
 - Report page renders.
 - API proxy reaches the configured backend.
 - Logout/session expiry works.
 - Mobile layout is usable on dashboard, engagement, evidence, and report pages.
 
-## CA Audit Demo Flow
+## CA Audit Production Flow
 
 The UI is designed around this market-ready journey:
 
@@ -152,4 +152,4 @@ The UI is designed around this market-ready journey:
 11. Add UDIN where configured
 12. Seal and share
 
-Features that depend on live backend integrations should show clear fallback states rather than pretending data exists.
+Features that depend on live backend integrations should show clear unavailable states rather than pretending data exists.

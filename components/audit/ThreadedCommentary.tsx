@@ -24,7 +24,7 @@ export function ThreadedCommentary({ targetId, targetType }: ThreadedCommentaryP
         if (!newComment.trim()) return
 
         addNote({
-            id: `NOTE-${Math.floor(Math.random() * 10000)}`,
+            id: crypto.randomUUID(),
             targetId,
             targetType,
             content: newComment,
