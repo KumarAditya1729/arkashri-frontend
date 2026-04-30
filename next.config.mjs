@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // Vercel deployment — no standalone output needed.
+    output: "standalone",
     // Keep build checks enabled so CI catches broken pages before deploy.
 };
 
