@@ -3,7 +3,7 @@
 import { AuditShell } from '@/components/layout/AuditShell'
 import { useState, useEffect } from 'react'
 import { ExternalLink, BookOpen, Bell, CheckCircle2, Clock, AlertTriangle, Filter, Loader2, GitCompare, X } from 'lucide-react'
-import { getRegulatoryDocuments, promoteRegulatoryDoc, diffRegulatoryDocs, RegulatoryDoc, RegulatoryDiffResponse } from '@/lib/api'
+import { getApiErrorMessage, getRegulatoryDocuments, promoteRegulatoryDoc, diffRegulatoryDocs, RegulatoryDoc, RegulatoryDiffResponse } from '@/lib/api'
 
 const issuerColor: Record<string, string> = {
     ICAI: 'bg-blue-100 text-blue-800',
@@ -58,6 +58,7 @@ export default function RegulatoryUpdatesPage() {
     const [selectedForDiff, setSelectedForDiff] = useState<number[]>([])
     const [diffResult, setDiffResult] = useState<RegulatoryDiffResponse | null>(null)
     const [loadingDiff, setLoadingDiff] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
         setLoading(true)
@@ -67,6 +68,11 @@ export default function RegulatoryUpdatesPage() {
                 setIsLive(true)
                 setExpanded(data[0].id)
             }
+            setError(null)
+        }).catch(err => {
+            setDocs([])
+            setIsLive(false)
+            setError(getApiErrorMessage(err, 'Unable to load regulatory documents from the backend.'))
         }).finally(() => setLoading(false))
     }, [])
 
@@ -136,6 +142,7 @@ export default function RegulatoryUpdatesPage() {
                         {loading && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
                     </div>
                     <p className="text-gray-500 mt-1 text-sm">Track relevant regulatory changes, new standards, and impact on active engagements.</p>
+                    {error && <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{error}</p>}
                 </div>
                 {unacknowledged > 0 && (
                     <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 text-sm font-semibold px-4 py-2 rounded-lg">

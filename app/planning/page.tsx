@@ -10,6 +10,7 @@ import {
     getEngagements, EngagementResponse,
     listPhases, createPhase, PhaseOut, PhaseCreate,
     listTeamMembers, addTeamMember, TeamMemberOut, TeamMemberCreate,
+    getApiErrorMessage,
 } from '@/lib/api'
 
 const PHASE_STATUS_CONFIG = {
@@ -43,14 +44,14 @@ const DEFAULT_PHASES: PhaseCreate[] = [
 
 // Common financial audit scope areas
 const SCOPE_AREAS = [
-    { area: 'Revenue & Trade Receivables', threshold: '₹12,50,000', included: true },
-    { area: 'Fixed Assets & Depreciation', threshold: '₹8,00,000', included: true },
-    { area: 'Inventory Valuation', threshold: '₹10,00,000', included: true },
-    { area: 'Payroll & Benefits', threshold: '₹5,00,000', included: true },
-    { area: 'Related Party Transactions', threshold: '₹2,50,000', included: true },
-    { area: 'Borrowings & Finance Costs', threshold: '₹4,00,000', included: true },
-    { area: 'Tax Provisions (Current & Deferred)', threshold: '₹3,00,000', included: true },
-    { area: 'Bank & Cash Reconciliations', threshold: '₹1,50,000', included: true },
+    { area: 'Revenue & Trade Receivables', threshold: 'Set after materiality', included: false },
+    { area: 'Fixed Assets & Depreciation', threshold: 'Set after materiality', included: false },
+    { area: 'Inventory Valuation', threshold: 'Set after materiality', included: false },
+    { area: 'Payroll & Benefits', threshold: 'Set after materiality', included: false },
+    { area: 'Related Party Transactions', threshold: 'Set after materiality', included: false },
+    { area: 'Borrowings & Finance Costs', threshold: 'Set after materiality', included: false },
+    { area: 'Tax Provisions (Current & Deferred)', threshold: 'Set after materiality', included: false },
+    { area: 'Bank & Cash Reconciliations', threshold: 'Set after materiality', included: false },
 ]
 
 export default function PlanningPage() {
@@ -79,6 +80,10 @@ export default function PlanningPage() {
         getEngagements().then(data => {
             setEngagements(data)
             if (data.length > 0) setSelectedId(data[0].id)
+            setPhaseError('')
+        }).catch(err => {
+            setEngagements([])
+            setPhaseError(getApiErrorMessage(err, 'Unable to load engagements from the backend.'))
         }).finally(() => setLoading(false))
     }, [])
 
@@ -87,6 +92,11 @@ export default function PlanningPage() {
         Promise.all([listPhases(selectedId), listTeamMembers(selectedId)]).then(([p, t]) => {
             setPhases(p)
             setTeam(t)
+            setPhaseError('')
+        }).catch(err => {
+            setPhases([])
+            setTeam([])
+            setPhaseError(getApiErrorMessage(err, 'Unable to load planning data from the backend.'))
         })
     }, [selectedId])
 
@@ -152,6 +162,7 @@ export default function PlanningPage() {
                     <div className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wider">Audit Workflow</div>
                     <h1 className="text-3xl font-black text-[#002776] tracking-tight">Planning</h1>
                     <p className="text-gray-500 mt-1 text-sm">Define audit strategy, scope, timeline, and team assignments.</p>
+                    {phaseError && <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{phaseError}</p>}
                 </div>
                 <div className="flex items-center gap-2">
                     {activeTab === 'timeline' && (

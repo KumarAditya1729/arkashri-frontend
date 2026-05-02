@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import {
     Plus, CheckCircle2, XCircle, Clock, FlaskConical, Loader2, X, AlertTriangle, Target
 } from 'lucide-react'
-import { getEngagements, EngagementResponse, getRisks, RiskResponse } from '@/lib/api'
+import { getEngagements, EngagementResponse, getRisks, RiskResponse, getApiErrorMessage } from '@/lib/api'
 
 type TestStatus = 'Pass' | 'Fail' | 'In Progress' | 'Pending'
 
@@ -29,15 +29,6 @@ const statusConfig: Record<TestStatus, { icon: any; color: string; bg: string }>
     Pending:     { icon: Clock,       color: 'text-gray-500',  bg: 'bg-gray-100' },
 }
 
-const CA_TEST_TEMPLATES = [
-    { procedure: 'Revenue Completeness — Trace sales to invoices (sample n=25)', area: 'Revenue', sampleSize: 25 },
-    { procedure: 'Bank Reconciliation Verification — Agree bank balance to GL', area: 'Cash & Bank', sampleSize: 30 },
-    { procedure: 'Inventory Count Observation — Physical count vs ledger (sample n=50)', area: 'Inventory', sampleSize: 50 },
-    { procedure: 'Payroll Cut-off Testing — Verify payroll accruals at year-end', area: 'Payroll', sampleSize: 20 },
-    { procedure: 'Related Party Disclosure — Confirm completeness of RP transactions', area: 'Related Party', sampleSize: 15 },
-    { procedure: 'Fixed Assets Addition Vouching — Vouch additions > materiality threshold', area: 'Fixed Assets', sampleSize: 40 },
-]
-
 export default function TestingPage() {
     const [engagements, setEngagements] = useState<EngagementResponse[]>([])
     const [selectedId, setSelectedId] = useState('')
@@ -47,49 +38,35 @@ export default function TestingPage() {
     const [loading, setLoading] = useState(true)
 
     const [showAdd, setShowAdd] = useState(false)
-    const [form, setForm] = useState({ procedure: '', area: '', controlRef: '', assignee: '', sampleSize: 25, dueDate: '', useTemplate: '' })
+    const [form, setForm] = useState({ procedure: '', area: '', controlRef: '', assignee: '', sampleSize: 25, dueDate: '' })
     const [notes, setNotes] = useState<Record<string, string>>({})
+    const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
         getEngagements().then(data => {
             setEngagements(data)
             if (data.length > 0) setSelectedId(data[0].id)
+            setError(null)
+        }).catch(err => {
+            setEngagements([])
+            setError(getApiErrorMessage(err, 'Unable to load engagements from the backend.'))
         }).finally(() => setLoading(false))
     }, [])
 
     useEffect(() => {
         if (!selectedId) return
-        getRisks(selectedId).then(setRisks)
+        getRisks(selectedId).then(data => {
+            setRisks(data)
+            setError(null)
+        }).catch(err => {
+            setRisks([])
+            setError(getApiErrorMessage(err, 'Unable to load risks from the backend.'))
+        })
     }, [selectedId])
-
-    const seedTemplates = () => {
-        const seeded: TestProcedure[] = CA_TEST_TEMPLATES.map((t, i) => ({
-            id: `TP-${String(i + 1).padStart(3, '0')}`,
-            procedure: t.procedure,
-            area: t.area,
-            controlRef: 'CTL-' + String(i + 1).padStart(3, '0'),
-            assignee: 'Senior Auditor',
-            status: 'Pending',
-            sampleSize: t.sampleSize,
-            exceptions: 0,
-            dueDate: new Date(Date.now() + (i + 1) * 7 * 86400000).toISOString().slice(0, 10),
-            notes: '',
-        }))
-        setTests(seeded)
-    }
 
     const handleAdd = () => {
         if (!form.procedure.trim()) return
-        const id = `TP-${String(tests.length + 1).padStart(3, '0')}`
-        const t: TestProcedure = {
-            id, procedure: form.procedure, area: form.area || 'General',
-            controlRef: form.controlRef || '—', assignee: form.assignee || 'Unassigned',
-            status: 'Pending', sampleSize: form.sampleSize, exceptions: 0,
-            dueDate: form.dueDate || '—', notes: '',
-        }
-        setTests(ts => [t, ...ts])
-        setShowAdd(false)
-        setForm({ procedure: '', area: '', controlRef: '', assignee: '', sampleSize: 25, dueDate: '', useTemplate: '' })
+        setError('Testing procedure persistence is not connected to a backend API yet. No client-side test record was created.')
     }
 
     const updateStatus = (id: string, status: TestStatus) => {
@@ -113,6 +90,7 @@ export default function TestingPage() {
                     <div className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wider">Audit Workflow</div>
                     <h1 className="text-3xl font-black text-[#002776] tracking-tight">Testing</h1>
                     <p className="text-gray-500 mt-1 text-sm">Execute audit test procedures and record results and exceptions (SA 330 / ISA 330).</p>
+                    {error && <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{error}</p>}
                 </div>
                 <button id="add-test-btn" onClick={() => setShowAdd(true)}
                     className="flex items-center gap-2 bg-[#002776] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#001a54] transition-colors shadow-sm">
@@ -155,10 +133,7 @@ export default function TestingPage() {
                         <div className="text-center py-14 text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">
                             <FlaskConical className="w-9 h-9 mx-auto mb-3 opacity-30" />
                             <p className="font-semibold text-gray-500 mb-3">No test procedures defined yet.</p>
-                            <button onClick={seedTemplates}
-                                className="inline-flex items-center gap-2 px-5 py-2 bg-[#002776] text-white text-sm font-semibold rounded-lg hover:bg-[#001a54]">
-                                <Plus className="w-4 h-4" />Seed Standard CA Test Procedures
-                            </button>
+                            <p className="text-xs text-gray-400">Testing procedures will appear after they are saved by the backend workflow.</p>
                         </div>
                     ) : (
                         <div className="flex gap-5">
@@ -243,17 +218,6 @@ export default function TestingPage() {
                         <div className="flex items-center justify-between mb-5">
                             <h2 className="text-xl font-black text-[#002776]">Add Test Procedure</h2>
                             <button onClick={() => setShowAdd(false)} className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5" /></button>
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5">Quick Template</label>
-                            <select value={form.useTemplate} onChange={e => {
-                                const t = CA_TEST_TEMPLATES.find(t => t.procedure === e.target.value)
-                                if (t) setForm(f => ({ ...f, procedure: t.procedure, area: t.area, sampleSize: t.sampleSize, useTemplate: e.target.value }))
-                                else setForm(f => ({ ...f, useTemplate: e.target.value }))
-                            }} className="w-full h-10 px-3 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#002776]/30">
-                                <option value="">— Custom / Manual —</option>
-                                {CA_TEST_TEMPLATES.map(t => <option key={t.procedure} value={t.procedure}>{t.procedure.slice(0, 55)}…</option>)}
-                            </select>
                         </div>
                         <div className="space-y-3">
                             <div>

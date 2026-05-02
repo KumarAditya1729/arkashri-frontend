@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { Plus, AlertTriangle, ShieldAlert, Filter, ArrowUpDown, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react'
 import {
     getRisks, createRisk, RiskResponse, RiskLikelihood, RiskImpact, RiskStatus,
-    getEngagements, EngagementResponse
+    getEngagements, EngagementResponse, getApiErrorMessage
 } from '@/lib/api'
 
 const likelihoodColor: Record<RiskLikelihood, string> = {
@@ -48,13 +48,23 @@ export default function RisksPage() {
         getEngagements().then(data => {
             setEngagements(data)
             if (data.length > 0) setSelectedId(data[0].id)
+            setError(null)
+        }).catch(err => {
+            setEngagements([])
+            setError(getApiErrorMessage(err, 'Unable to load engagements from the backend.'))
         }).finally(() => setLoading(false))
     }, [])
 
     useEffect(() => {
         if (!selectedId) return
         setLoading(true)
-        getRisks(selectedId).then(setRisks).finally(() => setLoading(false))
+        getRisks(selectedId).then(data => {
+            setRisks(data)
+            setError(null)
+        }).catch(err => {
+            setRisks([])
+            setError(getApiErrorMessage(err, 'Unable to load risks from the backend.'))
+        }).finally(() => setLoading(false))
     }, [selectedId])
 
     const filtered = filter === 'All' ? risks : risks.filter(r => r.risk_status === filter)
