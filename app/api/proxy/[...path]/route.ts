@@ -3,6 +3,27 @@ import { cookies } from 'next/headers'
 
 import { getBackendBaseUrl } from '@/lib/env'
 
+const FORWARDED_REQUEST_HEADERS = [
+    'accept',
+    'content-type',
+    'x-arkashri-tenant',
+    'x-correlation-id',
+    'x-request-id',
+] as const
+
+const STRIPPED_RESPONSE_HEADERS = [
+    'connection',
+    'content-encoding',
+    'content-length',
+    'keep-alive',
+    'proxy-authenticate',
+    'proxy-authorization',
+    'te',
+    'trailer',
+    'transfer-encoding',
+    'upgrade',
+] as const
+
 export async function GET(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
     const { path } = await params
     return handleProxy(request, path.join('/'))
@@ -50,9 +71,11 @@ async function handleProxy(request: Request, path: string) {
     const cookieStore = await cookies()
     const token = cookieStore.get('arkashri_token')?.value
 
-    const headers = new Headers(request.headers)
-    headers.delete('host')
-    headers.delete('connection')
+    const headers = new Headers()
+    for (const headerName of FORWARDED_REQUEST_HEADERS) {
+        const value = request.headers.get(headerName)
+        if (value) headers.set(headerName, value)
+    }
     if (token) {
         headers.set('Authorization', `Bearer ${token}`)
     }
@@ -70,9 +93,11 @@ async function handleProxy(request: Request, path: string) {
 
         const resBody = await res.arrayBuffer()
         const responseHeaders = new Headers(res.headers)
-        // Remove headers that might cause issues when proxied
-        responseHeaders.delete('content-encoding')
-        responseHeaders.delete('transfer-encoding')
+        // Never forward hop-by-hop or body-size headers after Node has consumed
+        // the upstream response; mismatches here can break Railway/Next proxies.
+        for (const headerName of STRIPPED_RESPONSE_HEADERS) {
+            responseHeaders.delete(headerName)
+        }
 
         // Always forward the actual backend status (including 4xx/5xx)
         // so the frontend sees the real error detail, not a wrapped 500
