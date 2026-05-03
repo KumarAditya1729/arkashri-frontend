@@ -14,7 +14,6 @@ type DashboardEngagement = {
     type: string
     client: string
     status: string
-    risk: string
     createdAt: string | null
     startDate: string | null
     slaStatus?: AuditSlaApiStatus
@@ -31,13 +30,6 @@ const statusColors: Record<string, string> = {
     'Review': 'bg-purple-100 text-purple-800',
     'Completed': 'bg-green-100 text-green-700',
     'Not Started': 'bg-gray-100 text-gray-600',
-}
-
-const riskDot: Record<string, string> = {
-    Critical: 'bg-red-500',
-    High: 'bg-orange-400',
-    Medium: 'bg-yellow-400',
-    Low: 'bg-green-400',
 }
 
 const auditIcons: Record<string, string> = {
@@ -84,7 +76,7 @@ export default function Dashboard() {
     const [ENGAGEMENTS, setEngagements] = useState<DashboardEngagement[]>([])
 
     const inProgress = ENGAGEMENTS.filter(e => e.status === 'In Progress').length
-    const critical = ENGAGEMENTS.filter(e => e.risk === 'Critical').length
+    const critical = 0
     const pending = ENGAGEMENTS.filter(e => e.status === 'Planning' || e.status === 'Not Started').length
     const slaSummary = ENGAGEMENTS.reduce<Record<AuditSlaStatus, number>>((acc, engagement) => {
         const status = toDisplaySlaStatus(engagement.slaStatus) ?? getSlaStatus({
@@ -131,7 +123,6 @@ export default function Dashboard() {
                 status: d.status === 'FIELD_WORK' ? 'In Progress' :
                     d.status === 'REVIEW' ? 'Review' :
                         d.status === 'COMPLETED' || d.status === 'SEALED' ? 'Completed' : 'Planning',
-                risk: 'Medium',
                 createdAt: d.created_at,
                 startDate: d.startDate ?? d.created_at,
                 slaStatus: d.slaStatus,
@@ -325,10 +316,7 @@ export default function Dashboard() {
                                 <p className="text-gray-400 text-xs mb-3">{e.client}</p>
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs font-mono text-gray-300">ENG-{e.id}</span>
-                                    <span className="flex items-center gap-1 text-xs text-gray-500">
-                                        <span className={`w-1.5 h-1.5 rounded-full ${riskDot[e.risk]}`} />
-                                        {e.risk}
-                                    </span>
+                                    <span className="text-xs text-gray-500">Live backend record</span>
                                 </div>
                             </div>
                         </Link>

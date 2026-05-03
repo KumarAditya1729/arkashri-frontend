@@ -3,7 +3,6 @@ import { AuditShell } from '@/components/layout/AuditShell'
 import { EngagementStepper } from '@/components/audit/EngagementStepper'
 import { registryByShortId } from '@/lib/engagementRegistry'
 import { getBackendBaseUrl } from '@/lib/env'
-import { notFound } from 'next/navigation'
 import { EngagementStateInitializer } from '@/components/audit/EngagementStateInitializer'
 import { cookies } from 'next/headers'
 import { normalizeAuditTypeTitle } from '@/lib/audit-types'
@@ -48,9 +47,29 @@ export default async function EngagementLayout({
         }
     }
 
-    if (!meta) {
-        notFound()
+    if (!meta && id.includes('-')) {
+        meta = {
+            shortId: id.substring(0, 8),
+            uuid: id,
+            auditType: 'Audit Engagement',
+            client: 'Live engagement data unavailable',
+            jurisdiction: 'Backend required',
+            period: 'NO LIVE DATA'
+        }
     }
+
+    if (!meta) {
+        meta = {
+            shortId: id,
+            uuid: null,
+            auditType: 'Audit Engagement',
+            client: 'Engagement not found',
+            jurisdiction: 'Backend required',
+            period: 'NO LIVE DATA'
+        }
+    }
+
+    const resolvedMeta = meta
 
     const TYPE_BADGE_COLORS: Record<string, string> = {
         'Forensic Audit': 'bg-red-100 text-red-800',
@@ -72,7 +91,7 @@ export default async function EngagementLayout({
         'Bank / Loan Audit': 'bg-slate-100 text-slate-800',
     }
 
-    const badgeClass = TYPE_BADGE_COLORS[meta.auditType] ?? 'bg-gray-100 text-gray-800'
+    const badgeClass = TYPE_BADGE_COLORS[resolvedMeta.auditType] ?? 'bg-gray-100 text-gray-800'
 
     return (
         <AuditShell>
@@ -81,21 +100,21 @@ export default async function EngagementLayout({
                     <div>
                         <div className="flex items-center gap-2 mb-2">
                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${badgeClass}`}>
-                                {meta.auditType}
+                                {resolvedMeta.auditType}
                             </span>
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 uppercase tracking-wider">
-                                {meta.jurisdiction}
+                                {resolvedMeta.jurisdiction}
                             </span>
                         </div>
                         <h1 className="text-2xl font-black text-[#002776] tracking-tight">
-                            {meta.client}
+                            {resolvedMeta.client}
                             <span className="text-gray-300 font-mono text-lg ml-3">ENG-{id}</span>
                         </h1>
-                        <p className="text-xs text-gray-500 mt-1 uppercase font-semibold tracking-widest">{meta.period}</p>
+                        <p className="text-xs text-gray-500 mt-1 uppercase font-semibold tracking-widest">{resolvedMeta.period}</p>
                     </div>
                 </div>
 
-                <EngagementStateInitializer engagementId={meta.uuid ?? id} auditType={meta.auditType} />
+                <EngagementStateInitializer engagementId={resolvedMeta.uuid ?? id} auditType={resolvedMeta.auditType} />
                 <EngagementStepper engagementId={id} />
             </div>
 

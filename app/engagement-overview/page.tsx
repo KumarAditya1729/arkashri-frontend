@@ -17,13 +17,6 @@ const statusColors: Record<AuditStatus, string> = {
     'Not Started': 'bg-gray-100 text-gray-600 border-gray-200',
 }
 
-const riskColors: Record<string, string> = {
-    Critical: 'text-red-600',
-    High: 'text-orange-500',
-    Medium: 'text-yellow-600',
-    Low: 'text-green-600',
-}
-
 const auditTypeIcons: Record<string, string> = {
     'Forensic Audit': '🔍',
     'Financial Audit': '💰',
@@ -59,7 +52,7 @@ const JURISDICTIONS = [
 export default function EngagementOverviewPage() {
     const [search, setSearch] = useState('')
     const [statusFilter, setStatusFilter] = useState<AuditStatus | 'All'>('All')
-    const [ALL_ENGAGEMENTS, setAllEngagements] = useState<{ id: string; type: string; client: string; status: AuditStatus; risk: string; period: string }[]>([])
+    const [ALL_ENGAGEMENTS, setAllEngagements] = useState<{ id: string; type: string; client: string; status: AuditStatus }[]>([])
     const [loading, setLoading] = useState(true)
     const [loadError, setLoadError] = useState('')
     const [showModal, setShowModal] = useState(false)
@@ -84,8 +77,6 @@ export default function EngagementOverviewPage() {
                 status: d.status === 'FIELD_WORK' ? 'In Progress' :
                     d.status === 'REVIEW' ? 'Review' :
                         d.status === 'COMPLETED' || d.status === 'SEALED' ? 'Completed' : 'Planning',
-                risk: 'Medium',
-                period: 'Current'
             })))
         }).catch(err => {
             setAllEngagements([])
@@ -200,8 +191,8 @@ export default function EngagementOverviewPage() {
                             </div>
                             <p className="text-gray-500 text-sm mb-3">{e.client}</p>
                             <div className="flex items-center justify-between">
-                                <span className="text-xs font-mono text-gray-400">ENG-{e.id} · {e.period}</span>
-                                <span className={`text-xs font-bold ${riskColors[e.risk]}`}>{e.risk} Risk</span>
+                                <span className="text-xs font-mono text-gray-400">ENG-{e.id}</span>
+                                <span className="text-xs font-bold text-gray-400">Live backend record</span>
                             </div>
                         </div>
                     </Link>

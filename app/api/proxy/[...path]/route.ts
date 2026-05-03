@@ -51,8 +51,7 @@ async function handleProxy(request: Request, path: string) {
     const token = cookieStore.get('arkashri_token')?.value
 
     const headers = new Headers(request.headers)
-    headers.delete('host')
-    headers.delete('connection')
+    stripHopByHopHeaders(headers)
     if (token) {
         headers.set('Authorization', `Bearer ${token}`)
     }
@@ -70,9 +69,7 @@ async function handleProxy(request: Request, path: string) {
 
         const resBody = await res.arrayBuffer()
         const responseHeaders = new Headers(res.headers)
-        // Remove headers that might cause issues when proxied
-        responseHeaders.delete('content-encoding')
-        responseHeaders.delete('transfer-encoding')
+        stripHopByHopHeaders(responseHeaders)
 
         // Always forward the actual backend status (including 4xx/5xx)
         // so the frontend sees the real error detail, not a wrapped 500
@@ -94,4 +91,23 @@ async function handleProxy(request: Request, path: string) {
             error_message: error instanceof Error ? error.message : String(error)
         }, { status: 502 })
     }
+}
+
+function stripHopByHopHeaders(headers: Headers) {
+    // Railway/Next fetch can terminate proxied requests when browser/server
+    // transport headers are forwarded across a fresh upstream connection.
+    [
+        'host',
+        'connection',
+        'keep-alive',
+        'proxy-authenticate',
+        'proxy-authorization',
+        'te',
+        'trailer',
+        'transfer-encoding',
+        'upgrade',
+        'content-length',
+        'content-encoding',
+        'accept-encoding',
+    ].forEach(header => headers.delete(header))
 }

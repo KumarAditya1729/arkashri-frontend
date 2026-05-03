@@ -85,6 +85,10 @@ export function getApiErrorMessage(err: unknown, fallback = 'Unable to load live
             const parsed = JSON.parse(err.message)
             if (typeof parsed?.detail === 'string') return parsed.detail
             if (typeof parsed?.message === 'string') return parsed.message
+            if (typeof parsed?.error === 'string' && typeof parsed?.error_message === 'string') {
+                return `${parsed.error}: ${parsed.error_message}`
+            }
+            if (typeof parsed?.error === 'string') return parsed.error
         } catch {
             // Use the raw server message below when it is not JSON.
         }

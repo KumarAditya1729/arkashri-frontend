@@ -1,4 +1,3 @@
-import { AuditShell } from '@/components/layout/AuditShell'
 import { PhaseApprovalGateway } from '@/components/audit/PhaseApprovalGateway'
 import { WidgetErrorBoundary } from '@/components/layout/WidgetErrorBoundary'
 import { AuditCompletionEstimator } from '@/components/audit/AuditCompletionEstimator'
@@ -131,7 +130,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
     const badgeClass = TYPE_BADGE_COLORS[engagementData.auditType] ?? 'bg-gray-100 text-gray-800'
 
     return (
-        <AuditShell>
+        <>
             <div className="mb-8 flex justify-between items-start">
                 <div>
                     <div className="text-sm font-semibold text-gray-500 mb-2">ENGAGEMENT COMMAND CENTER</div>
@@ -255,7 +254,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
                     </div>
                 </div>
             )}
-        </AuditShell>
+        </>
     )
 }
 
