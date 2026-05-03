@@ -239,7 +239,7 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
             )}
 
             {/* Multi-Partner Sign-Off & Seal */}
-            {uuid ? (
+            {engagementData.isLive && uuid ? (
                 <PartnerSignOff
                     engagementId={uuid}
                     currentUserId="partner_001"
