@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, use } from 'react'
 import { Upload, Link as LinkIcon, FileText, Image, Trash2, Plus, CheckCircle2, Clock, Loader2 } from 'lucide-react'
-import { listEvidence, uploadEvidence, deleteEvidence, EvidenceResponse } from '@/lib/api'
+import { listEvidence, uploadEvidence, deleteEvidence, EvidenceResponse, getApiErrorMessage } from '@/lib/api'
 import { getUuid } from '@/lib/engagementRegistry'
 
 const typeIcon: Record<string, any> = { Document: FileText, Screenshot: Image, Confirmation: CheckCircle2, Workpaper: FileText, 'External Link': LinkIcon }
@@ -35,6 +35,9 @@ export default function EvidencePage({ params }: { params: Promise<{ id: string 
             try {
                 const data = await listEvidence(uuid)
                 if (!cancelled && data.length > 0) { setEvidence(data); setIsLive(true) }
+                if (!cancelled) setError(null)
+            } catch (err) {
+                if (!cancelled) setError(getApiErrorMessage(err, 'Unable to load evidence from the backend.'))
             } finally {
                 if (!cancelled) setLoading(false)
             }

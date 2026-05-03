@@ -14,15 +14,31 @@ import { AuditShell } from '@/components/layout/AuditShell'
 /* ─────────────────────────────────────────────
    DATA
 ───────────────────────────────────────────── */
-const erpSystems = [
+type ErpConnectionStatus = 'connected' | 'syncing' | 'not_configured'
+
+type ErpSystem = {
+  id: string
+  name: string
+  vendor: string
+  description: string
+  status: ErpConnectionStatus
+  lastSync: string | null
+  records: string
+  features: string[]
+  icon: string
+  gradient: string
+  accent: string
+}
+
+const erpSystems: ErpSystem[] = [
   {
     id: 'quickbooks',
     name: 'QuickBooks',
     vendor: 'Intuit',
     description: 'Cloud accounting for SMBs',
-    status: 'connected',
-    lastSync: '2024-01-15 14:30',
-    records: '482K',
+    status: 'not_configured',
+    lastSync: null,
+    records: '—',
     features: ['Invoicing', 'Bank Feeds', 'Financial Reports', 'Tax'],
     icon: '📊',
     gradient: 'from-green-500 to-emerald-600',
@@ -33,9 +49,9 @@ const erpSystems = [
     name: 'Tally Prime',
     vendor: 'Tally Solutions',
     description: 'On-premise enterprise accounting',
-    status: 'connected',
-    lastSync: '2024-01-15 12:15',
-    records: '718K',
+    status: 'not_configured',
+    lastSync: null,
+    records: '—',
     features: ['GST Compliance', 'Inventory', 'Payroll'],
     icon: '📈',
     gradient: 'from-violet-500 to-purple-600',
@@ -46,7 +62,7 @@ const erpSystems = [
     name: 'Zoho Books',
     vendor: 'Zoho Corp.',
     description: 'Cloud financial platform',
-    status: 'disconnected',
+    status: 'not_configured',
     lastSync: null,
     records: '—',
     features: ['Banking', 'Project Accounting', 'Multi-currency'],
@@ -59,7 +75,7 @@ const erpSystems = [
     name: 'SAP S/4HANA',
     vendor: 'SAP SE',
     description: 'Global enterprise operations',
-    status: 'disconnected',
+    status: 'not_configured',
     lastSync: null,
     records: '—',
     features: ['FI/CO', 'Supply Chain', 'HR Analytics'],
@@ -72,7 +88,7 @@ const erpSystems = [
     name: 'Oracle NetSuite',
     vendor: 'Oracle Corp.',
     description: 'Cloud ERP platform',
-    status: 'disconnected',
+    status: 'not_configured',
     lastSync: null,
     records: '—',
     features: ['ERP/Financials', 'CRM', 'E-commerce'],
@@ -85,7 +101,7 @@ const erpSystems = [
     name: 'Secure Data Dump',
     vendor: 'Arkashri Internal',
     description: 'CISO-friendly offline ingestion',
-    status: 'disconnected',
+    status: 'not_configured',
     lastSync: null,
     records: '—',
     features: ['Air-gapped Upload', 'CSV/XML Parser', 'AES-256 Encrypted'],
@@ -95,13 +111,7 @@ const erpSystems = [
   },
 ]
 
-const analyticsLogs = [
-  { time: 'Today, 14:30', status: 'Success', msg: 'Ingested 4,200 general ledger entries', icon: CheckCircle },
-  { time: 'Today, 14:00', status: 'Warning', msg: 'Rate limit approached (89%) – Auto-throttled', icon: AlertCircle },
-  { time: 'Yesterday, 02:00', status: 'Success', msg: 'Nightly deep scan completed successfully', icon: CheckCircle },
-  { time: 'Jan 14, 16:45', status: 'Failed', msg: 'Connection timeout connecting to gateway', icon: AlertCircle },
-  { time: 'Jan 14, 09:00', status: 'Success', msg: 'OAuth token refreshed automatically', icon: CheckCircle },
-]
+const analyticsLogs: Array<{ time: string; status: string; msg: string }> = []
 
 /* ─────────────────────────────────────────────
    SUB-COMPONENTS
@@ -124,7 +134,7 @@ function StatusPill({ status }: { status: string }) {
   return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black bg-slate-100 text-slate-500 border border-slate-200 tracking-wide">
       <span className="w-1.5 h-1.5 rounded-full bg-slate-400 block" />
-      OFFLINE
+      NOT CONFIGURED
     </span>
   )
 }
@@ -155,10 +165,10 @@ export default function ERPPage() {
   }, [])
 
   const stats = [
-    { label: 'Active Pipelines', value: '2', sub: 'of 6 platforms', icon: Plug, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-    { label: 'Records Synced', value: '1.2M', sub: 'across all connectors', icon: HardDrive, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
-    { label: 'System Uptime', value: '99.9%', sub: 'last 90 days', icon: Activity, color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100' },
-    { label: 'Last Global Sync', value: '14m', sub: 'ago — all healthy', icon: RefreshCw, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
+    { label: 'Active Pipelines', value: '0', sub: 'waiting for backend connections', icon: Plug, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' },
+    { label: 'Records Synced', value: '—', sub: 'available after first sync', icon: HardDrive, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' },
+    { label: 'System Uptime', value: '—', sub: 'reported by live connector telemetry', icon: Activity, color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100' },
+    { label: 'Last Global Sync', value: '—', sub: 'no sync recorded yet', icon: RefreshCw, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' },
   ]
 
   return (
@@ -529,7 +539,7 @@ export default function ERPPage() {
                               <input
                                 type="text"
                                 readOnly
-                                value="https://app.arkashri.com/api/oauth/callback"
+                                value="Configured after backend connector setup"
                                 className="flex-1 p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-600 font-mono focus:outline-none cursor-default"
                               />
                               <button className="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 text-xs font-bold rounded-xl border border-gray-200 transition-colors whitespace-nowrap">
@@ -610,31 +620,43 @@ export default function ERPPage() {
                         </button>
                       </div>
 
-                      {analyticsLogs.map((log, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center justify-between gap-4 p-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-gray-200 hover:bg-white transition-all duration-150 group"
-                        >
-                          <div className="flex items-start gap-3 min-w-0">
-                            <div className={`mt-0.5 w-2.5 h-2.5 rounded-full shrink-0 shadow-sm ${
-                              log.status === 'Success' ? 'bg-emerald-500' :
-                              log.status === 'Warning' ? 'bg-amber-500' : 'bg-red-500'
-                            }`} />
-                            <div className="min-w-0">
-                              <div className="text-sm font-bold text-gray-900 truncate">{log.msg}</div>
-                              <div className="text-xs font-medium text-gray-400 mt-0.5 flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                {log.time}
-                              </div>
-                            </div>
-                          </div>
-                          <LogStatusBadge status={log.status} />
+                      {analyticsLogs.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/70 p-6 text-center">
+                          <Clock className="mx-auto mb-3 h-6 w-6 text-gray-300" />
+                          <p className="text-sm font-bold text-gray-600">No ERP activity recorded yet.</p>
+                          <p className="mt-1 text-xs text-gray-400">
+                            Connector sync logs will appear here only after a backend ERP connection runs successfully.
+                          </p>
                         </div>
-                      ))}
+                      ) : (
+                        <>
+                          {analyticsLogs.map((log, i) => (
+                            <div
+                              key={i}
+                              className="flex items-center justify-between gap-4 p-4 bg-gray-50 border border-gray-100 rounded-xl hover:border-gray-200 hover:bg-white transition-all duration-150 group"
+                            >
+                              <div className="flex items-start gap-3 min-w-0">
+                                <div className={`mt-0.5 w-2.5 h-2.5 rounded-full shrink-0 shadow-sm ${
+                                  log.status === 'Success' ? 'bg-emerald-500' :
+                                  log.status === 'Warning' ? 'bg-amber-500' : 'bg-red-500'
+                                }`} />
+                                <div className="min-w-0">
+                                  <div className="text-sm font-bold text-gray-900 truncate">{log.msg}</div>
+                                  <div className="text-xs font-medium text-gray-400 mt-0.5 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {log.time}
+                                  </div>
+                                </div>
+                              </div>
+                              <LogStatusBadge status={log.status} />
+                            </div>
+                          ))}
 
-                      <button className="w-full text-center text-xs font-bold text-blue-600 hover:text-blue-800 py-3 border border-dashed border-blue-200 hover:border-blue-400 rounded-xl bg-blue-50/40 hover:bg-blue-50 transition-all">
-                        Load More Logs
-                      </button>
+                          <button className="w-full text-center text-xs font-bold text-blue-600 hover:text-blue-800 py-3 border border-dashed border-blue-200 hover:border-blue-400 rounded-xl bg-blue-50/40 hover:bg-blue-50 transition-all">
+                            Load More Logs
+                          </button>
+                        </>
+                      )}
                     </TabsContent>
 
                   </Tabs>

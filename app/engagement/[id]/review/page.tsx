@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react'
 import { Eye, CheckCircle2, XCircle, MessageSquare, Clock, ChevronDown, ChevronUp, Send, Loader2 } from 'lucide-react'
-import { getApprovals, actionApproval } from '@/lib/api'
+import { getApprovals, actionApproval, getApiErrorMessage } from '@/lib/api'
 
 type ReviewStatus = 'Approved' | 'Changes Required' | 'Pending' | 'In Review'
 
@@ -76,6 +76,12 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
                 } else {
                     setItems([])
                     setIsLive(true)
+                }
+                setError(null)
+            } catch (err) {
+                if (!cancelled) {
+                    setItems([])
+                    setError(getApiErrorMessage(err, 'Unable to load review approvals from the backend.'))
                 }
             } finally {
                 if (!cancelled) setLoading(false)

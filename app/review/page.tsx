@@ -3,7 +3,7 @@
 import { AuditShell } from '@/components/layout/AuditShell'
 import { useState, useEffect } from 'react'
 import { Eye, CheckCircle2, XCircle, MessageSquare, Clock, ChevronDown, ChevronUp, Send, Loader2 } from 'lucide-react'
-import { getApprovals, actionApproval } from '@/lib/api'
+import { getApprovals, actionApproval, getApiErrorMessage } from '@/lib/api'
 
 type ReviewStatus = 'Approved' | 'Changes Required' | 'Pending' | 'In Review'
 
@@ -67,6 +67,12 @@ export default function ReviewPage() {
                     }))
                     setItems(mapped)
                     setIsLive(true)
+                }
+                setError(null)
+            } catch (err) {
+                if (!cancelled) {
+                    setItems([])
+                    setError(getApiErrorMessage(err, 'Unable to load review approvals from the backend.'))
                 }
             } finally {
                 if (!cancelled) setLoading(false)

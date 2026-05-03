@@ -4,7 +4,7 @@ import { AuditShell } from '@/components/layout/AuditShell'
 import Link from 'next/link'
 import { ArrowRight, Search, Filter, Loader2, Plus, X, CalendarClock, CheckCircle2 } from 'lucide-react'
 import { useState, useEffect } from 'react'
-import { getEngagements, createEngagement } from '@/lib/api'
+import { getEngagements, createEngagement, getApiErrorMessage } from '@/lib/api'
 import { AUDIT_TYPE_DEFINITIONS, getAuditTypeDefinition, normalizeAuditTypeTitle } from '@/lib/audit-types'
 
 type AuditStatus = 'In Progress' | 'Planning' | 'Review' | 'Completed' | 'Not Started'
@@ -61,6 +61,7 @@ export default function EngagementOverviewPage() {
     const [statusFilter, setStatusFilter] = useState<AuditStatus | 'All'>('All')
     const [ALL_ENGAGEMENTS, setAllEngagements] = useState<{ id: string; type: string; client: string; status: AuditStatus; risk: string; period: string }[]>([])
     const [loading, setLoading] = useState(true)
+    const [loadError, setLoadError] = useState('')
     const [showModal, setShowModal] = useState(false)
     const [creating, setCreating] = useState(false)
     const [createError, setCreateError] = useState('')
@@ -74,6 +75,7 @@ export default function EngagementOverviewPage() {
 
     const loadEngagements = () => {
         setLoading(true)
+        setLoadError('')
         getEngagements().then(data => {
             setAllEngagements(data.map(d => ({
                 id: d.id,
@@ -85,6 +87,9 @@ export default function EngagementOverviewPage() {
                 risk: 'Medium',
                 period: 'Current'
             })))
+        }).catch(err => {
+            setAllEngagements([])
+            setLoadError(getApiErrorMessage(err, 'Unable to load engagements from the backend.'))
         }).finally(() => setLoading(false))
     }
 
@@ -106,8 +111,8 @@ export default function EngagementOverviewPage() {
             setShowModal(false)
             setForm({ client_name: '', engagement_type: AUDIT_TYPE_DEFINITIONS[0].title, jurisdiction: 'IN', tenant_id: 'default_tenant' })
             loadEngagements()
-        } catch (err: any) {
-            setCreateError(err?.message ?? 'Failed to create engagement. Please try again.')
+        } catch (err: unknown) {
+            setCreateError(getApiErrorMessage(err, 'Failed to create engagement. Please try again.'))
         } finally {
             setCreating(false)
         }
@@ -164,6 +169,12 @@ export default function EngagementOverviewPage() {
             </div>
 
             {/* Search */}
+            {loadError && (
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                    {loadError}
+                </div>
+            )}
+
             <div className="relative mb-6">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input

@@ -3,7 +3,7 @@
 import { AuditShell } from '@/components/layout/AuditShell'
 import { useState, useEffect, useRef } from 'react'
 import { Upload, Link as LinkIcon, FileText, Image, Trash2, Plus, CheckCircle2, Clock, Loader2, ShieldCheck } from 'lucide-react'
-import { listEvidence, uploadEvidence, deleteEvidence, anchorMultiChainEvidence, EvidenceResponse } from '@/lib/api'
+import { listEvidence, uploadEvidence, deleteEvidence, anchorMultiChainEvidence, EvidenceResponse, getApiErrorMessage } from '@/lib/api'
 import { ENGAGEMENT_REGISTRY } from '@/lib/engagementRegistry'
 
 const getActiveEngagementUuid = () => ENGAGEMENT_REGISTRY[0]?.uuid ?? null
@@ -41,6 +41,9 @@ export default function EvidencePage() {
             try {
                 const data = await listEvidence(uuid)
                 if (!cancelled && data.length > 0) { setEvidence(data); setIsLive(true) }
+                if (!cancelled) setError(null)
+            } catch (err) {
+                if (!cancelled) setError(getApiErrorMessage(err, 'Unable to load evidence from the backend.'))
             } finally {
                 if (!cancelled) setLoading(false)
             }

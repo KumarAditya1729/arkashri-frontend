@@ -75,6 +75,26 @@ export class ApiError extends Error {
     }
 }
 
+function isEmptyListStatus(err: unknown): boolean {
+    return err instanceof ApiError && err.status === 404
+}
+
+export function getApiErrorMessage(err: unknown, fallback = 'Unable to load live data. Please try again.'): string {
+    if (err instanceof ApiError) {
+        try {
+            const parsed = JSON.parse(err.message)
+            if (typeof parsed?.detail === 'string') return parsed.detail
+            if (typeof parsed?.message === 'string') return parsed.message
+        } catch {
+            // Use the raw server message below when it is not JSON.
+        }
+        if (err.status === 401) return 'Authentication required. Please sign in again.'
+        if (err.status === 403) return 'Access denied for this workspace or role.'
+        return err.message || fallback
+    }
+    return err instanceof Error ? err.message : fallback
+}
+
 export interface EvidenceLedgerEntry {
     id: number
     tenant_id: string
@@ -324,8 +344,9 @@ export async function getEngagement(uuid: string): Promise<EngagementResponse | 
 export async function getEngagements(): Promise<EngagementResponse[]> {
     try {
         return await apiFetch<EngagementResponse[]>('/api/v1/engagements/engagements')
-    } catch {
-        return []
+    } catch (err) {
+        if (isEmptyListStatus(err)) return []
+        throw err
     }
 }
 
@@ -348,8 +369,9 @@ export async function sealEngagement(uuid: string): Promise<SealResponse> {
 export async function getRisks(engagementUuid: string): Promise<RiskResponse[]> {
     try {
         return await apiFetch<RiskResponse[]>(`/api/v1/engagements/${engagementUuid}/risks`)
-    } catch {
-        return []
+    } catch (err) {
+        if (isEmptyListStatus(err)) return []
+        throw err
     }
 }
 
@@ -380,8 +402,9 @@ export async function updateRiskStatus(engagementUuid: string, riskId: string, s
 export async function listEvidence(engagementUuid: string): Promise<EvidenceResponse[]> {
     try {
         return await apiFetch<EvidenceResponse[]>(`/api/v1/engagements/${engagementUuid}/evidence`)
-    } catch {
-        return []
+    } catch (err) {
+        if (isEmptyListStatus(err)) return []
+        throw err
     }
 }
 
@@ -403,8 +426,9 @@ export async function deleteEvidence(engagementUuid: string, evidenceId: string)
 export async function getApprovals(tenant: string = TENANT, jurisdiction: string = 'IN'): Promise<ApprovalResponse[]> {
     try {
         return await apiFetch<ApprovalResponse[]>(`/api/v1/approvals/${tenant}/${jurisdiction}`)
-    } catch {
-        return []
+    } catch (err) {
+        if (isEmptyListStatus(err)) return []
+        throw err
     }
 }
 
@@ -419,8 +443,9 @@ export async function actionApproval(requestId: string, actionType: 'APPROVED' |
 export async function getRegulatoryDocuments(jurisdiction: string = 'IN'): Promise<RegulatoryDoc[]> {
     try {
         return await apiFetch<RegulatoryDoc[]>(`/api/v1/regulatory/documents/${jurisdiction}`)
-    } catch {
-        return []
+    } catch (err) {
+        if (isEmptyListStatus(err)) return []
+        throw err
     }
 }
 

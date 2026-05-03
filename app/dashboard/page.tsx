@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, Activity, Users, FileWarning, TrendingUp, Loader2, ClipboardCheck, FileText, FolderOpen, CheckCircle2, ListChecks, Sparkles } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { getAutomationScore, AutomationScoreResponse, getEngagements, ApiError, type AuditSlaApiStatus, type WorkflowReportStatus, type WorkflowReviewStatus } from '@/lib/api'
+import { getAutomationScore, AutomationScoreResponse, getEngagements, ApiError, getApiErrorMessage, type AuditSlaApiStatus, type WorkflowReportStatus, type WorkflowReviewStatus } from '@/lib/api'
 import { AUDIT_TYPE_DEFINITIONS, getSlaStatus, normalizeAuditTypeTitle, SLA_STATUS_STYLES, toDisplaySlaStatus, type AuditSlaStatus } from '@/lib/audit-types'
 
 type DashboardEngagement = {
@@ -106,6 +106,7 @@ export default function Dashboard() {
     const [automationData, setAutomationData] = useState<AutomationScoreResponse | null>(null)
     const [scoreLoading, setScoreLoading] = useState(true)
     const [isLiveScore, setIsLiveScore] = useState(false)
+    const [engagementLoadError, setEngagementLoadError] = useState('')
 
     useEffect(() => {
         getAutomationScore().then(data => {
@@ -121,6 +122,7 @@ export default function Dashboard() {
         }).finally(() => setScoreLoading(false))
 
         getEngagements().then(data => {
+            setEngagementLoadError('')
             // Map EngagementResponse into the dashboard view model.
             setEngagements(data.map(d => ({
                 id: d.id,
@@ -138,6 +140,9 @@ export default function Dashboard() {
                 reviewStatus: d.reviewStatus,
                 reportStatus: d.reportStatus,
             })))
+        }).catch(err => {
+            setEngagements([])
+            setEngagementLoadError(getApiErrorMessage(err, 'Unable to load engagements from the backend.'))
         })
     }, [router])
 
@@ -147,6 +152,11 @@ export default function Dashboard() {
                 <h1 className="text-3xl font-black text-[#002776] mb-1 tracking-tight">Operator Dashboard</h1>
                 <p className="text-gray-500 text-sm">Indian CA audit command surface — guided workflows, evidence status, review readiness and report progress.</p>
             </div>
+            {engagementLoadError && (
+                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                    {engagementLoadError}
+                </div>
+            )}
 
             {/* Top grid: KPI cards + Automation Score Widget */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

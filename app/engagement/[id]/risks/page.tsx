@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from 'react'
 import { Plus, AlertTriangle, ShieldAlert, Filter, ArrowUpDown, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react'
-import { getRisks, createRisk, RiskResponse, RiskLikelihood, RiskImpact, RiskStatus } from '@/lib/api'
+import { getRisks, createRisk, RiskResponse, RiskLikelihood, RiskImpact, RiskStatus, getApiErrorMessage } from '@/lib/api'
 import { getUuid } from '@/lib/engagementRegistry'
 
 const EMPTY_RISKS: RiskResponse[] = []
@@ -51,6 +51,10 @@ export default function RisksPage({ params }: { params: Promise<{ id: string }> 
                 setRisks(data)
                 setIsLive(true)
             }
+            setError(null)
+        }).catch(err => {
+            setRisks([])
+            setError(getApiErrorMessage(err, 'Unable to load risks from the backend.'))
         }).finally(() => setLoading(false))
     }, [uuid])
 

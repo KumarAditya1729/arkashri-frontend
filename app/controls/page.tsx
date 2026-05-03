@@ -9,7 +9,7 @@ import {
     getEngagements, EngagementResponse,
     listControls, createControl, updateControlStatus,
     ControlOut, ControlCreate, ControlStatus, ControlType,
-    getRisks, RiskResponse
+    getRisks, RiskResponse, getApiErrorMessage
 } from '@/lib/api'
 
 type DisplayStatus = 'Effective' | 'Deficient' | 'Not Tested' | 'Compensating'
@@ -60,6 +60,10 @@ export default function ControlsPage() {
         getEngagements().then(data => {
             setEngagements(data)
             if (data.length > 0) setSelectedId(data[0].id)
+            setAddError('')
+        }).catch(err => {
+            setEngagements([])
+            setAddError(getApiErrorMessage(err, 'Unable to load engagements from the backend.'))
         }).finally(() => setLoading(false))
     }, [])
 
@@ -68,6 +72,11 @@ export default function ControlsPage() {
         Promise.all([listControls(selectedId), getRisks(selectedId)]).then(([c, r]) => {
             setControls(c)
             setRisks(r)
+            setAddError('')
+        }).catch(err => {
+            setControls([])
+            setRisks([])
+            setAddError(getApiErrorMessage(err, 'Unable to load controls from the backend.'))
         })
     }, [selectedId])
 
@@ -111,6 +120,7 @@ export default function ControlsPage() {
                     <div className="text-xs font-semibold text-gray-400 mb-1 uppercase tracking-wider">Audit Workflow</div>
                     <h1 className="text-3xl font-black text-[#002776] tracking-tight">Controls Matrix</h1>
                     <p className="text-gray-500 mt-1 text-sm">Evaluate design and operating effectiveness of internal controls.</p>
+                    {addError && <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">{addError}</p>}
                 </div>
                 <button id="add-control-btn" onClick={() => setShowAdd(true)}
                     className="flex items-center gap-2 bg-[#002776] text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-[#001a54] transition-colors shadow-sm">
