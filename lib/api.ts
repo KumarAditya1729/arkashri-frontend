@@ -319,6 +319,47 @@ export interface AIGovernanceLogCreate {
     override_reason?: string | null
 }
 
+// ─── Books Health / 7-Day Sprint Types ───────────────────────────────────────
+
+export type BooksHealthSeverity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+export type SevenDaySprintStatus = 'READY' | 'AT_RISK' | 'BLOCKED'
+
+export interface BooksHealthIssue {
+    id: string
+    category: 'BANK' | 'GST' | 'LEDGER' | 'EVIDENCE' | string
+    severity: BooksHealthSeverity
+    title: string
+    description: string
+    recommended_action: string
+    amount: number | null
+    source_refs: string[]
+}
+
+export interface BooksHealthCategory {
+    score: number
+    issues: BooksHealthIssue[]
+    [key: string]: unknown
+}
+
+export interface BooksHealthRunResponse {
+    engagement_id: string
+    tenant_id: string
+    checked_at: string
+    readiness_score: number
+    seven_day_sprint_status: SevenDaySprintStatus
+    critical_blocker_count: number
+    high_risk_item_count: number
+    client_query_count_created: number
+    categories: Record<string, BooksHealthCategory>
+    issues: BooksHealthIssue[]
+    created_queries: Array<Record<string, unknown>>
+    next_actions: string[]
+}
+
+export interface BooksHealthListResponse {
+    health_checks: BooksHealthRunResponse[]
+}
+
 // ─── API Functions ────────────────────────────────────────────────────────────
 
 // Auth - Now uses Next.js Route Handlers for HttpOnly cookies
@@ -486,6 +527,26 @@ export async function recordAIGovernanceLog(payload: AIGovernanceLogCreate): Pro
         method: 'POST',
         body: JSON.stringify(payload),
     })
+}
+
+export async function runBooksHealthCheck(
+    engagementUuid: string,
+    createClientQueries = false,
+): Promise<BooksHealthRunResponse> {
+    return apiFetch<BooksHealthRunResponse>(`/api/v1/readiness/engagements/${engagementUuid}/books-health`, {
+        method: 'POST',
+        body: JSON.stringify({ create_client_queries: createClientQueries }),
+    })
+}
+
+export async function listBooksHealthChecks(engagementUuid: string): Promise<BooksHealthRunResponse[]> {
+    try {
+        const response = await apiFetch<BooksHealthListResponse>(`/api/v1/readiness/engagements/${engagementUuid}/books-health`)
+        return response.health_checks ?? []
+    } catch (err) {
+        if (isEmptyListStatus(err)) return []
+        throw err
+    }
 }
 
 // ─── Automation Score Types ───────────────────────────────────────────────────
