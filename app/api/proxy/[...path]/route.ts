@@ -66,6 +66,12 @@ async function handleProxy(request: Request, path: string) {
         targetUrl = `${baseUrl}/${apiPath}${searchParams}`
     }
 
+    if (request.method === 'GET') {
+        const url = new URL(targetUrl)
+        url.searchParams.set('_arkashri_proxy_bust', Date.now().toString())
+        targetUrl = url.toString()
+    }
+
     console.log(`[PROXY] forwarding to: ${targetUrl}`)
 
     const cookieStore = await cookies()
@@ -80,6 +86,8 @@ async function handleProxy(request: Request, path: string) {
     // full response body. Ask the backend for identity encoding so the proxy can
     // safely forward the body without content-encoding mismatches.
     headers.set('accept-encoding', 'identity')
+    headers.set('cache-control', 'no-cache')
+    headers.set('pragma', 'no-cache')
     if (token) {
         headers.set('Authorization', `Bearer ${token}`)
     }
@@ -95,10 +103,9 @@ async function handleProxy(request: Request, path: string) {
             cache: 'no-store',
         })
 
-        const resBody = await res.arrayBuffer()
         const responseHeaders = new Headers(res.headers)
-        // Never forward hop-by-hop or body-size headers after Node has consumed
-        // the upstream response; mismatches here can break Railway/Next proxies.
+        // Never forward hop-by-hop or body-size headers through the proxy;
+        // mismatches here can break Railway/Next response forwarding.
         for (const headerName of STRIPPED_RESPONSE_HEADERS) {
             responseHeaders.delete(headerName)
         }
@@ -106,11 +113,10 @@ async function handleProxy(request: Request, path: string) {
         // Always forward the actual backend status (including 4xx/5xx)
         // so the frontend sees the real error detail, not a wrapped 500
         if (!res.ok) {
-            const text = Buffer.from(resBody).toString('utf-8')
-            console.error(`[PROXY] backend error ${res.status} for ${targetUrl}: ${text.slice(0, 500)}`)
+            console.error(`[PROXY] backend error ${res.status} for ${targetUrl}`)
         }
 
-        return new Response(resBody, {
+        return new Response(res.body, {
             status: res.status,
             statusText: res.statusText,
             headers: responseHeaders,
