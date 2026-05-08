@@ -101,7 +101,7 @@ export default async function EngagementLayout({
                         </div>
                         <h1 className="text-2xl font-black text-[#002776] tracking-tight">
                             {meta.client}
-                            <span className="text-gray-300 font-mono text-lg ml-3">ENG-{id}</span>
+                            <span className="text-gray-300 font-mono text-lg ml-3">ENG-{meta.shortId}</span>
                         </h1>
                         <p className="text-xs text-gray-500 mt-1 uppercase font-semibold tracking-widest">{meta.period}</p>
                     </div>
