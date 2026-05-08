@@ -76,6 +76,10 @@ async function handleProxy(request: Request, path: string) {
         const value = request.headers.get(headerName)
         if (value) headers.set(headerName, value)
     }
+    // Railway/undici can terminate proxied compressed streams while reading the
+    // full response body. Ask the backend for identity encoding so the proxy can
+    // safely forward the body without content-encoding mismatches.
+    headers.set('accept-encoding', 'identity')
     if (token) {
         headers.set('Authorization', `Bearer ${token}`)
     }

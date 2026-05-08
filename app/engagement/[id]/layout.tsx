@@ -17,8 +17,9 @@ export default async function EngagementLayout({
 }) {
     const { id } = await params
     let meta = registryByShortId(id)
+    const isUuidLike = id.includes('-') && id.length >= 32
 
-    if (!meta && id.includes('-')) {
+    if (!meta && isUuidLike) {
         try {
             const cookieStore = await cookies()
             const token = cookieStore.get('arkashri_token')?.value
@@ -45,6 +46,17 @@ export default async function EngagementLayout({
             }
         } catch (e) {
             console.error('Layout SSR Fetch Error:', e)
+        }
+    }
+
+    if (!meta && isUuidLike) {
+        meta = {
+            shortId: id.substring(0, 8),
+            uuid: id,
+            auditType: 'Audit Engagement',
+            client: `Engagement ${id.substring(0, 8)}`,
+            jurisdiction: 'IN',
+            period: 'LIVE DATA REQUIRED',
         }
     }
 

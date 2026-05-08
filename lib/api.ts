@@ -572,16 +572,18 @@ export async function createSealSession(
 export async function getSealSession(engagementUuid: string): Promise<SealSessionOut | null> {
     try {
         return await apiFetch<SealSessionOut>(`/api/v1/engagements/${engagementUuid}/seal-session`)
-    } catch {
-        return null
+    } catch (err) {
+        if (isEmptyListStatus(err)) return null
+        throw err
     }
 }
 
 export async function getPreSignSummary(sessionId: string): Promise<PreSignSummary | null> {
     try {
         return await apiFetch<PreSignSummary>(`/api/v1/seal-sessions/${sessionId}/pre-sign-summary`)
-    } catch {
-        return null
+    } catch (err) {
+        if (isEmptyListStatus(err)) return null
+        throw err
     }
 }
 
@@ -665,7 +667,10 @@ export interface TeamMemberCreate {
 export async function listPhases(engagementId: string): Promise<PhaseOut[]> {
     try {
         return await apiFetch<PhaseOut[]>(`/api/v1/engagements/${engagementId}/phases`)
-    } catch { return [] }
+    } catch (err) {
+        if (isEmptyListStatus(err)) return []
+        throw err
+    }
 }
 
 export async function createPhase(engagementId: string, payload: PhaseCreate): Promise<PhaseOut> {
@@ -678,7 +683,10 @@ export async function createPhase(engagementId: string, payload: PhaseCreate): P
 export async function listTeamMembers(engagementId: string): Promise<TeamMemberOut[]> {
     try {
         return await apiFetch<TeamMemberOut[]>(`/api/v1/engagements/${engagementId}/team`)
-    } catch { return [] }
+    } catch (err) {
+        if (isEmptyListStatus(err)) return []
+        throw err
+    }
 }
 
 export interface AuditRunOut {
@@ -694,7 +702,10 @@ export interface AuditRunOut {
 export async function listAuditRuns(engagementId: string): Promise<AuditRunOut[]> {
     try {
         return await apiFetch<AuditRunOut[]>(`/api/v1/orchestration/engagements/${engagementId}/runs`)
-    } catch { return [] }
+    } catch (err) {
+        if (isEmptyListStatus(err)) return []
+        throw err
+    }
 }
 
 export async function addTeamMember(engagementId: string, payload: TeamMemberCreate): Promise<TeamMemberOut> {
