@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { DisclaimerBadge } from './DisclaimerBadge'
 import { useState, useEffect } from 'react'
-import { apiFetch } from '@/lib/api'
+import { apiFetch, recordAIGovernanceLog } from '@/lib/api'
 import Link from 'next/link'
 
 interface ContextInsight {
@@ -23,8 +23,10 @@ export function AIBox() {
 
     const [insight, setInsight] = useState<ContextInsight | null>(null)
     const [loading, setLoading] = useState(false)
+    const [signing, setSigning] = useState(false)
     const [showJustification, setShowJustification] = useState(false)
     const [justificationText, setJustificationText] = useState('')
+    const [workflowMessage, setWorkflowMessage] = useState<string | null>(null)
 
     useEffect(() => {
         if (!engagementId) return;
@@ -59,6 +61,37 @@ export function AIBox() {
     const displaySuggestion = insight ? insight.suggestion : "Create or select an engagement to receive contextual AI suggestions."
     const displayConfidence = insight ? Math.round(insight.confidence) : 0
     const displayBindings = insight ? insight.regulatory_bindings : []
+    const canApplyInsight = Boolean(engagementId && insight && displayConfidence > 0 && displayBindings.length > 0)
+
+    const handleSignWorkflow = async () => {
+        if (!engagementId || !insight) return
+        setSigning(true)
+        setWorkflowMessage(null)
+        try {
+            await recordAIGovernanceLog({
+                tenant_id: process.env.NEXT_PUBLIC_API_TENANT ?? 'default_tenant',
+                jurisdiction: 'IN',
+                decision_id: `${engagementId.slice(0, 36)}:${currentStage}`.slice(0, 100),
+                model_used: 'GPT-4o',
+                decision_rationale: [
+                    `Context: ${currentStage}`,
+                    `Audit type: ${auditType || 'Generic'}`,
+                    `AI suggestion: ${insight.suggestion}`,
+                    `Regulatory bindings: ${displayBindings.join('; ')}`,
+                    `CA justification: ${justificationText.trim()}`,
+                ].join('\n'),
+                human_override: true,
+                override_reason: justificationText.trim(),
+            })
+            setWorkflowMessage('Human review note recorded in the AI governance log.')
+            setShowJustification(false)
+            setJustificationText('')
+        } catch {
+            setWorkflowMessage('Could not record the governance log. Do not rely on this AI suggestion for sign-off.')
+        } finally {
+            setSigning(false)
+        }
+    }
 
     return (
         <div className="flex flex-col h-full bg-slate-50">
@@ -116,11 +149,18 @@ export function AIBox() {
                                     </p>
 
                                     {engagementId && (
-                                        <div className="flex justify-between items-center bg-white p-2 rounded border text-xs">
-                                            <span className="text-gray-500 flex items-center">
-                                                <Activity className="w-3 h-3 mr-1" /> Confidence
-                                            </span>
-                                            <span className="font-bold text-indigo-700">{displayConfidence}%</span>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between items-center bg-white p-2 rounded border text-xs">
+                                                <span className="text-gray-500 flex items-center">
+                                                    <Activity className="w-3 h-3 mr-1" /> Confidence
+                                                </span>
+                                                <span className="font-bold text-indigo-700">{displayConfidence}%</span>
+                                            </div>
+                                            {displayBindings.length === 0 && (
+                                                <div className="rounded border border-amber-100 bg-amber-50 p-2 text-[11px] leading-4 text-amber-800">
+                                                    No source binding is attached. Treat this as ungrounded support only.
+                                                </div>
+                                            )}
                                         </div>
                                     )}
 
@@ -162,13 +202,20 @@ export function AIBox() {
                                     />
                                     <div className="flex justify-end gap-2 mt-2">
                                         <Button variant="ghost" size="sm" className="text-gray-500 text-xs h-7" onClick={() => setShowJustification(false)}>Cancel</Button>
-                                        <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white text-xs h-7 font-bold" disabled={justificationText.length < 10} onClick={() => { console.log('Logged:', justificationText); setShowJustification(false); setJustificationText(''); }}>Sign Workflow</Button>
+                                        <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white text-xs h-7 font-bold" disabled={signing || justificationText.trim().length < 20} onClick={handleSignWorkflow}>
+                                            {signing ? 'Recording...' : 'Sign Workflow'}
+                                        </Button>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="flex justify-end gap-2">
-                                    <Button variant="ghost" size="sm" className="text-gray-500" disabled={loading || !insight} onClick={() => console.log('AI suggestion dismissed')}>Dismiss</Button>
-                                    <Button size="sm" className="bg-[#002776] hover:bg-[#001f5c]" disabled={loading || !insight} onClick={() => setShowJustification(true)}>Apply Action</Button>
+                                    <Button variant="ghost" size="sm" className="text-gray-500" disabled={loading || !insight} onClick={() => setWorkflowMessage('Suggestion dismissed for this workspace session.')}>Dismiss</Button>
+                                    <Button size="sm" className="bg-[#002776] hover:bg-[#001f5c]" disabled={loading || !canApplyInsight} onClick={() => setShowJustification(true)}>Apply Action</Button>
+                                </div>
+                            )}
+                            {workflowMessage && (
+                                <div className="text-[11px] leading-4 text-slate-500">
+                                    {workflowMessage}
                                 </div>
                             )}
                         </div>

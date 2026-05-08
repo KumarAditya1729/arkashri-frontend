@@ -3,6 +3,19 @@ import { cookies } from 'next/headers'
 
 import { getBackendBaseUrl } from '@/lib/env'
 
+const ACCESS_COOKIE = 'arkashri_token'
+const REFRESH_COOKIE = 'arkashri_refresh_token'
+
+function authCookieOptions(maxAge: number) {
+    return {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax' as const,
+        path: '/',
+        maxAge,
+    }
+}
+
 export async function POST(request: Request) {
     try {
         const body = await request.json()
@@ -29,20 +42,18 @@ export async function POST(request: Request) {
         }
 
         const data = await res.json()
-        const { access_token } = data
+        const { access_token, refresh_token, expires_in, user } = data
 
-        // Set HttpOnly cookie
+        if (!access_token || !refresh_token || !user) {
+            return NextResponse.json({ error: 'Backend auth response is incomplete.' }, { status: 502 })
+        }
+
+        // Keep tokens out of browser JavaScript; expose only non-secret session metadata.
         const cookieStore = await cookies()
-        cookieStore.set('arkashri_token', access_token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',  // 'strict' breaks OAuth redirects and external navigations
-            path: '/',
-            maxAge: 60 * 60 * 24, // 24 hours
-        })
+        cookieStore.set(ACCESS_COOKIE, access_token, authCookieOptions(Math.max(Number(expires_in) || 0, 60)))
+        cookieStore.set(REFRESH_COOKIE, refresh_token, authCookieOptions(60 * 60 * 24 * 7))
 
-
-        return NextResponse.json(data)
+        return NextResponse.json({ expires_in, user }, { headers: { 'Cache-Control': 'no-store' } })
     } catch (error) {
         console.error('Auth proxy error:', error)
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 })

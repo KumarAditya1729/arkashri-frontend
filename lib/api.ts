@@ -118,10 +118,8 @@ export interface EvidenceLedgerEntry {
 
 // ─── Auth Types ───────────────────────────────────────────────────────────────
 
-export interface TokenResponse {
-    access_token: string
-    token_type: string
-    expires_in: number
+export interface AuthSessionResponse {
+    expires_in?: number
     user: {
         email: string
         full_name: string
@@ -311,14 +309,37 @@ export interface RegulatoryDiffResponse {
     diff_text: string
 }
 
+export interface AIGovernanceLogCreate {
+    tenant_id: string
+    jurisdiction: string
+    decision_id: string
+    model_used: string
+    decision_rationale: string
+    human_override: boolean
+    override_reason?: string | null
+}
+
 // ─── API Functions ────────────────────────────────────────────────────────────
 
 // Auth - Now uses Next.js Route Handlers for HttpOnly cookies
-export async function signIn(email: string, password: string): Promise<TokenResponse> {
+export async function signIn(email: string, password: string): Promise<AuthSessionResponse> {
     const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
+    })
+    if (!res.ok) {
+        const text = await res.text()
+        throw new ApiError(res.status, text)
+    }
+    return res.json()
+}
+
+export async function verifySession(): Promise<AuthSessionResponse> {
+    const res = await fetch('/api/auth/session', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-store',
     })
     if (!res.ok) {
         const text = await res.text()
@@ -458,6 +479,13 @@ export async function promoteRegulatoryDoc(docId: number): Promise<void> {
 
 export async function diffRegulatoryDocs(docId1: number, docId2: number): Promise<RegulatoryDiffResponse> {
     return apiFetch<RegulatoryDiffResponse>(`/api/v1/regulatory/updates/diff/${docId1}/${docId2}`)
+}
+
+export async function recordAIGovernanceLog(payload: AIGovernanceLogCreate): Promise<void> {
+    await apiFetch('/api/v1/usas/ai-governance-logs', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    })
 }
 
 // ─── Automation Score Types ───────────────────────────────────────────────────

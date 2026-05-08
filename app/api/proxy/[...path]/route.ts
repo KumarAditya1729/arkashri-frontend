@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
-import { getBackendBaseUrl } from '@/lib/env'
+import { getAppBaseUrl, getBackendBaseUrl } from '@/lib/env'
 
 const FORWARDED_REQUEST_HEADERS = [
     'accept',
@@ -23,6 +23,8 @@ const STRIPPED_RESPONSE_HEADERS = [
     'transfer-encoding',
     'upgrade',
 ] as const
+
+const MUTATING_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE'])
 
 export async function GET(request: Request, { params }: { params: Promise<{ path: string[] }> }) {
     const { path } = await params
@@ -50,6 +52,13 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ p
 }
 
 async function handleProxy(request: Request, path: string) {
+    if (MUTATING_METHODS.has(request.method) && !isAllowedBrowserOrigin(request)) {
+        return NextResponse.json(
+            { error: 'Cross-origin backend mutation rejected.' },
+            { status: 403, headers: { 'Cache-Control': 'no-store' } },
+        )
+    }
+
     const searchParams = new URL(request.url).search
     
     // Normalize backend URL and handle if it already includes /api/v1
@@ -128,5 +137,25 @@ async function handleProxy(request: Request, path: string) {
             proxy_target: targetUrl,
             error_message: error instanceof Error ? error.message : String(error)
         }, { status: 502 })
+    }
+}
+
+function isAllowedBrowserOrigin(request: Request): boolean {
+    const requestOrigin = new URL(request.url).origin
+    const allowedOrigins = new Set([requestOrigin, getAppBaseUrl()])
+    const origin = request.headers.get('origin')
+    if (origin) return allowedOrigins.has(normalizeOrigin(origin))
+
+    const referer = request.headers.get('referer')
+    if (referer) return allowedOrigins.has(normalizeOrigin(referer))
+
+    return false
+}
+
+function normalizeOrigin(value: string): string {
+    try {
+        return new URL(value).origin
+    } catch {
+        return value.replace(/\/+$/, '')
     }
 }
