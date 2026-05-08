@@ -1,4 +1,3 @@
-import { AuditShell } from '@/components/layout/AuditShell'
 import { PhaseApprovalGateway } from '@/components/audit/PhaseApprovalGateway'
 import { WidgetErrorBoundary } from '@/components/layout/WidgetErrorBoundary'
 import { AuditCompletionEstimator } from '@/components/audit/AuditCompletionEstimator'
@@ -8,7 +7,9 @@ import { registryByShortId } from '@/lib/engagementRegistry'
 import { getBackendBaseUrl } from '@/lib/env'
 import { normalizeAuditTypeTitle } from '@/lib/audit-types'
 import type { AuditSlaApiStatus, WorkflowReportStatus, WorkflowReviewStatus } from '@/lib/api'
+import { AlertTriangle, CheckCircle2, Database, FileCheck2, LockKeyhole, RefreshCcw, ShieldCheck } from 'lucide-react'
 import { cookies } from 'next/headers'
+import Link from 'next/link'
 
 const TYPE_BADGE_COLORS: Record<string, string> = {
     'Forensic Audit': 'bg-red-100 text-red-800',
@@ -119,8 +120,8 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
                 fetchError = 'Engagement not found in the production backend.'
                 engagementData = buildUnavailableEngagement(shortId, registryEntry)
             }
-        } catch {
-            fetchError = 'Backend unreachable. Live engagement data is unavailable.'
+        } catch (error) {
+            fetchError = error instanceof Error ? error.message : 'Backend unreachable. Live engagement data is unavailable.'
             engagementData = buildUnavailableEngagement(shortId, registryEntry)
         }
     } else {
@@ -129,74 +130,127 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
     }
 
     const badgeClass = TYPE_BADGE_COLORS[engagementData.auditType] ?? 'bg-gray-100 text-gray-800'
+    const displayId = shortId.includes('-') ? shortId.substring(0, 8) : shortId
+    const readinessItems = engagementData.isLive
+        ? [
+            { label: 'Client master', value: engagementData.clientName, state: 'Ready' },
+            { label: 'Framework', value: `${engagementData.jurisdiction} / ${engagementData.standardsFramework}`, state: 'Ready' },
+            { label: 'Evidence status', value: engagementData.documentProgress ? 'Documents linked' : 'Awaiting evidence index', state: engagementData.documentProgress ? 'Ready' : 'Pending' },
+            { label: 'Review status', value: engagementData.reviewStatus ?? 'Not started', state: engagementData.reviewStatus === 'approved' ? 'Ready' : 'Pending' },
+        ]
+        : [
+            { label: 'Client master', value: 'Backend record not available', state: 'Blocked' },
+            { label: 'Framework', value: `${engagementData.jurisdiction} / ${engagementData.standardsFramework}`, state: 'Reference only' },
+            { label: 'Evidence status', value: 'Evidence cannot be trusted until the live engagement loads', state: 'Blocked' },
+            { label: 'Sign-off', value: 'Partner sign-off is disabled until the backend record is reachable', state: 'Blocked' },
+        ]
 
     return (
-        <AuditShell>
-            <div className="mb-8 flex justify-between items-start">
+        <div className="space-y-6">
+            <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
                 <div>
-                    <div className="text-sm font-semibold text-gray-500 mb-2">ENGAGEMENT COMMAND CENTER</div>
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <div className="mb-3 flex flex-wrap items-center gap-2">
                         <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${badgeClass}`}>
                             {engagementData.auditType}
                         </span>
-
-                        {/* LIVE / UNAVAILABLE data source badge */}
-                        {engagementData.isLive ? (
-                            <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-800 border border-green-200">
-                                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                LIVE
-                            </span>
-                        ) : (
-                            <span className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200">
-                                <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
-                                NO LIVE DATA
-                            </span>
-                        )}
-
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border ${engagementData.isLive ? 'bg-green-50 text-green-800 border-green-200' : 'bg-amber-50 text-amber-800 border-amber-200'}`}>
+                            {engagementData.isLive ? <CheckCircle2 className="h-3.5 w-3.5" /> : <AlertTriangle className="h-3.5 w-3.5" />}
+                            {engagementData.isLive ? 'Live audit file' : 'Live record required'}
+                        </span>
                         {engagementData.sealedAt && (
-                            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
-                                🔒 SEALED
+                            <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full bg-green-50 text-green-700 border border-green-200">
+                                <LockKeyhole className="h-3.5 w-3.5" />
+                                Sealed
                             </span>
                         )}
                     </div>
-                    <h1 className="text-3xl font-black text-[#002776] tracking-tight">
-                        {engagementData.clientName}
-                        <span className="text-gray-400 font-mono text-xl ml-3">ENG-{shortId}</span>
-                    </h1>
-                    {engagementData.isLive && (
-                        <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-800 border border-neutral-200">
-                                🌍 {engagementData.jurisdiction} ({engagementData.standardsFramework})
-                            </span>
-                            <span>· Status: <span className="font-semibold text-gray-700">{engagementData.status}</span></span>
-                        </p>
-                    )}
-
-                    {/* Non-blocking fetch warning */}
+                    <h2 className="text-xl font-black text-slate-950 tracking-tight">
+                        Audit readiness and file control
+                    </h2>
+                    <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+                        Engagement {displayId} is shown with production controls only. Client facts, workpapers,
+                        review evidence, and partner sign-off remain gated until the live backend record is available.
+                    </p>
                     {fetchError && (
-                        <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1.5">
-                            ⚠️ {fetchError}
+                        <div className="mt-4 flex gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                            <div>
+                                <div className="font-bold">Live engagement record could not be loaded</div>
+                                <div className="mt-1 text-amber-800">{fetchError}</div>
+                            </div>
                         </div>
                     )}
                 </div>
 
-                <div className="text-right shrink-0">
-                    <div className="text-sm text-gray-500 mb-1">Status</div>
-                    <div className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {engagementData.status ?? 'Active Collection'}
+                <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="text-xs font-bold uppercase tracking-wider text-slate-500">File Status</div>
+                    <div className={`mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-bold ${engagementData.isLive ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-800'}`}>
+                        {engagementData.isLive ? <ShieldCheck className="h-3.5 w-3.5" /> : <Database className="h-3.5 w-3.5" />}
+                        {engagementData.status}
+                    </div>
+                    <div className="mt-4 text-xs leading-5 text-slate-500">
+                        No synthetic audit conclusions are displayed. This protects the file from unsupported CA sign-off.
                     </div>
                 </div>
-            </div>
+            </section>
 
             {!engagementData.isLive && (
-                <div className="mb-8 rounded-xl border border-dashed border-gray-200 bg-white p-6 text-sm text-gray-600">
-                    <div className="font-bold text-gray-900">Production engagement data required</div>
-                    <p className="mt-2">
-                        Arkashri will not render fabricated playbooks or client facts. Create or sync this engagement
-                        from the backend, then reopen the production UUID-based engagement page.
-                    </p>
-                </div>
+                <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px]">
+                    <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+                        <div className="flex items-start gap-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-700">
+                                <FileCheck2 className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-slate-950">Production engagement data required</h3>
+                                <p className="mt-2 text-sm leading-6 text-slate-600">
+                                    A CA should not see invented client information, audit procedures, or conclusions.
+                                    Sync this UUID with the backend engagement table, or open an engagement from the
+                                    overview after the authenticated session is restored.
+                                </p>
+                            </div>
+                        </div>
+                        <div className="mt-5 flex flex-wrap gap-3">
+                            <Link
+                                href="/engagement-overview"
+                                className="inline-flex items-center gap-2 rounded-md bg-[#002776] px-4 py-2 text-sm font-bold text-white hover:bg-[#001f5f]"
+                            >
+                                <Database className="h-4 w-4" />
+                                Open Engagement Register
+                            </Link>
+                            <Link
+                                href={`/engagement/${shortId}`}
+                                className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"
+                            >
+                                <RefreshCcw className="h-4 w-4" />
+                                Retry Live Load
+                            </Link>
+                        </div>
+                    </div>
+
+                    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                        <div className="text-xs font-bold uppercase tracking-wider text-slate-500">CA Guardrail</div>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                            Evidence, review, and seal actions are intentionally locked until the source engagement
+                            record is reachable.
+                        </p>
+                    </div>
+                </section>
             )}
+
+            <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                {readinessItems.map((item) => (
+                    <div key={item.label} className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+                        <div className="flex items-center justify-between gap-3">
+                            <div className="text-xs font-bold uppercase tracking-wider text-slate-500">{item.label}</div>
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${item.state === 'Ready' ? 'bg-green-50 text-green-700' : item.state === 'Blocked' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'}`}>
+                                {item.state}
+                            </span>
+                        </div>
+                        <div className="mt-3 text-sm font-semibold leading-5 text-slate-900">{item.value}</div>
+                    </div>
+                ))}
+            </section>
 
             {engagementData.isLive && (
                 <AuditTypeWorkflow
@@ -248,14 +302,12 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
                     onSealed={(hash) => console.log('Sealed:', hash)}
                 />
             ) : (
-                <div className="mt-8 border-t pt-6">
-                    <div className="text-xs text-gray-500 bg-gray-50 border border-dashed border-gray-200 rounded-lg p-4">
-                        <span className="font-semibold text-gray-600">Partner Sign-Off & Seal</span> becomes available once
-                        this engagement exists in the production backend.
-                    </div>
+                <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+                    <span className="font-bold text-slate-800">Partner Sign-Off & Seal</span> becomes available once
+                    this engagement exists in the production backend.
                 </div>
             )}
-        </AuditShell>
+        </div>
     )
 }
 

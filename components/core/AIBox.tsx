@@ -35,11 +35,10 @@ export function AIBox() {
             try {
                 const data = await apiFetch<ContextInsight>(`/api/v1/analytics/contextual-lens?engagement_id=${engagementId}&current_stage=${currentStage}`)
                 if (isMounted) setInsight(data)
-            } catch (err) {
-                console.error("Failed to load contextual insight", err)
+            } catch {
                 if (isMounted) {
                     setInsight({
-                        suggestion: "AI Assistant encountered an error generating context.",
+                        suggestion: "Contextual AI is temporarily unavailable. Continue with CA judgment, verify the live engagement record, and document any manual conclusion before sign-off.",
                         confidence: 0,
                         regulatory_bindings: []
                     })
