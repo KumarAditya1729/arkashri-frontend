@@ -26,9 +26,10 @@ export function getBackendBaseUrl(): string {
 }
 
 export function getAppBaseUrl(): string {
-    const raw =
-        process.env.NEXT_PUBLIC_APP_URL ??
-        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined)
+    const raw = [
+        process.env.NEXT_PUBLIC_APP_URL,
+        process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined,
+    ].find(value => !isPlaceholderUrl(value))
 
     return normalizeUrl(raw ?? 'http://localhost:3000')
 }
