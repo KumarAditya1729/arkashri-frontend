@@ -1,6 +1,7 @@
 import { PhaseApprovalGateway } from '@/components/audit/PhaseApprovalGateway'
 import { WidgetErrorBoundary } from '@/components/layout/WidgetErrorBoundary'
 import { AuditCompletionEstimator } from '@/components/audit/AuditCompletionEstimator'
+import { BooksHealthDashboard } from '@/components/audit/BooksHealthDashboard'
 import PartnerSignOff from '@/components/audit/PartnerSignOff'
 import { AuditTypeWorkflow } from '@/components/audit/AuditTypeWorkflow'
 import { registryByShortId } from '@/lib/engagementRegistry'
@@ -251,6 +252,10 @@ export default async function EngagementPage({ params }: { params: Promise<{ id:
                     </div>
                 ))}
             </section>
+
+            {engagementData.isLive && uuid && (
+                <BooksHealthDashboard engagementId={uuid} />
+            )}
 
             {engagementData.isLive && (
                 <AuditTypeWorkflow
