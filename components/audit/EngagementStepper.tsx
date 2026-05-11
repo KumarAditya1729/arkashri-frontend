@@ -13,7 +13,9 @@ interface Step {
 const STEPS: Step[] = [
     { name: 'Planning', path: 'planning' },
     { name: 'Data', path: 'data-refinery' },
+    { name: 'ERP/GST', path: 'integrations' },
     { name: 'Automation', path: 'automation' },
+    { name: 'Specialist', path: 'specialist-audits' },
     { name: 'Risks', path: 'risks' },
     { name: 'Controls', path: 'controls' },
     { name: 'Evidence', path: 'evidence' },

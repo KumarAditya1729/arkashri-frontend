@@ -1,16 +1,23 @@
 'use client'
 
 import { useState, useRef, use } from 'react'
-import { AlertTriangle, CheckCircle2, DatabaseZap, FileSpreadsheet, Loader2, Upload } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, DatabaseZap, FileSpreadsheet, FileText, Loader2, ScanText, Upload } from 'lucide-react'
 
 import {
     DataRefineryPreview,
     DataRefinerySourceType,
+    ExcelRefineryPreview,
+    PdfBankStatementIntake,
+    extractBankStatementPdf,
     getApiErrorMessage,
     ingestDataRefineryCsv,
+    previewBankStatementPdf,
     previewDataRefineryCsv,
+    previewDataRefineryExcel,
 } from '@/lib/api'
 import { getUuid } from '@/lib/engagementRegistry'
+
+type FileMode = 'csv' | 'excel' | 'pdf'
 
 const SOURCE_OPTIONS: { value: DataRefinerySourceType; label: string }[] = [
     { value: 'books_ledger', label: 'Books ledger' },
@@ -40,21 +47,55 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [sourceType, setSourceType] = useState<DataRefinerySourceType>('books_ledger')
     const [file, setFile] = useState<File | null>(null)
-    const [preview, setPreview] = useState<DataRefineryPreview | null>(null)
+    const [fileMode, setFileMode] = useState<FileMode>('csv')
+    const [csvPreview, setCsvPreview] = useState<DataRefineryPreview | null>(null)
+    const [excelPreview, setExcelPreview] = useState<ExcelRefineryPreview | null>(null)
+    const [pdfPreview, setPdfPreview] = useState<PdfBankStatementIntake | null>(null)
+    const [pdfExtraction, setPdfExtraction] = useState<Record<string, unknown> | null>(null)
     const [mapping, setMapping] = useState<Record<string, string>>({})
     const [loading, setLoading] = useState(false)
     const [ingesting, setIngesting] = useState(false)
+    const [extracting, setExtracting] = useState(false)
     const [message, setMessage] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
 
-    const runPreview = async (selectedFile: File, currentMapping?: Record<string, string>) => {
+    const resetPreviews = () => {
+        setCsvPreview(null)
+        setExcelPreview(null)
+        setPdfPreview(null)
+        setPdfExtraction(null)
+    }
+
+    const detectFileMode = (selectedFile: File): FileMode => {
+        const name = selectedFile.name.toLowerCase()
+        if (name.endsWith('.xlsx') || name.endsWith('.xls')) return 'excel'
+        if (name.endsWith('.pdf')) return 'pdf'
+        return 'csv'
+    }
+
+    const runPreview = async (
+        selectedFile: File,
+        mode: FileMode,
+        currentSourceType = sourceType,
+        currentMapping?: Record<string, string>,
+    ) => {
         setLoading(true)
         setError(null)
         setMessage(null)
+        resetPreviews()
         try {
-            const result = await previewDataRefineryCsv(selectedFile, sourceType, currentMapping)
-            setPreview(result)
-            setMapping(result.suggested_mapping)
+            if (mode === 'excel') {
+                const result = await previewDataRefineryExcel(selectedFile, currentSourceType)
+                setExcelPreview(result)
+            } else if (mode === 'pdf') {
+                const result = await previewBankStatementPdf(selectedFile)
+                setPdfPreview(result)
+                setSourceType('bank_statement')
+            } else {
+                const result = await previewDataRefineryCsv(selectedFile, currentSourceType, currentMapping)
+                setCsvPreview(result)
+                setMapping(result.suggested_mapping)
+            }
         } catch (err) {
             setError(getApiErrorMessage(err, 'Unable to preview raw data.'))
         } finally {
@@ -64,18 +105,26 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
 
     const handleFile = async (selected: File | undefined) => {
         if (!selected) return
+        const mode = detectFileMode(selected)
         setFile(selected)
-        await runPreview(selected)
+        setFileMode(mode)
+        setMapping({})
+        await runPreview(selected, mode, mode === 'pdf' ? 'bank_statement' : sourceType)
+    }
+
+    const updateSourceType = async (next: DataRefinerySourceType) => {
+        setSourceType(next)
+        if (file && fileMode !== 'pdf') await runPreview(file, fileMode, next, mapping)
     }
 
     const updateMapping = async (field: string, value: string) => {
         const next = { ...mapping, [field]: value }
         setMapping(next)
-        if (file) await runPreview(file, next)
+        if (file && fileMode === 'csv') await runPreview(file, 'csv', sourceType, next)
     }
 
     const ingest = async () => {
-        if (!uuid || !file) {
+        if (!uuid || !file || fileMode !== 'csv') {
             setError('A live engagement and CSV file are required before ingestion.')
             return
         }
@@ -92,27 +141,44 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
         }
     }
 
-    const headers = preview?.headers ?? []
-    const topIssues = preview?.issues.slice(0, 8) ?? []
-    const rows = preview?.normalized_preview.slice(0, 8) ?? []
+    const extractPdf = async () => {
+        if (!file || fileMode !== 'pdf') return
+        setExtracting(true)
+        setError(null)
+        setMessage(null)
+        try {
+            const result = await extractBankStatementPdf(file)
+            setPdfExtraction(result)
+            setMessage('Bank statement OCR extraction completed and returned for auditor review.')
+        } catch (err) {
+            setError(getApiErrorMessage(err, 'PDF OCR extraction is not configured on this backend yet.'))
+        } finally {
+            setExtracting(false)
+        }
+    }
+
+    const headers = csvPreview?.headers ?? []
+    const topIssues = csvPreview?.issues.slice(0, 8) ?? []
+    const rows = csvPreview?.normalized_preview.slice(0, 8) ?? []
+    const canIngestCsv = fileMode === 'csv' && !!csvPreview?.can_ingest
 
     return (
         <div className="space-y-6">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <div className="flex items-center gap-2">
                         <DatabaseZap className="h-5 w-5 text-[#002776]" />
                         <h1 className="text-xl font-bold text-[#002776] tracking-tight">Audit Data Refinery</h1>
                     </div>
-                    <p className="mt-1 text-xs text-gray-500">Convert messy CSV exports into clean, classified, audit-ready transaction rows.</p>
+                    <p className="mt-1 text-xs text-gray-500">Convert CSV, Excel and PDF bank statement data into audit-ready review outputs.</p>
                 </div>
                 <button
                     onClick={() => fileInputRef.current?.click()}
                     className="inline-flex items-center gap-2 rounded-lg bg-[#002776] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#001a54]"
                 >
-                    <Upload className="h-4 w-4" /> Upload CSV
+                    <Upload className="h-4 w-4" /> Upload File
                 </button>
-                <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={event => handleFile(event.target.files?.[0])} />
+                <input ref={fileInputRef} type="file" accept=".csv,text/csv,.xlsx,.xls,.pdf,application/pdf" className="hidden" onChange={event => handleFile(event.target.files?.[0])} />
             </div>
 
             {(error || message) && (
@@ -127,45 +193,75 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
                         <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Source type</label>
                         <select
                             value={sourceType}
-                            onChange={event => {
-                                const next = event.target.value as DataRefinerySourceType
-                                setSourceType(next)
-                                if (file) void previewDataRefineryCsv(file, next, mapping).then(setPreview).catch(err => setError(getApiErrorMessage(err)))
-                            }}
-                            className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                            onChange={event => void updateSourceType(event.target.value as DataRefinerySourceType)}
+                            disabled={fileMode === 'pdf'}
+                            className="mt-2 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm disabled:bg-gray-100"
                         >
                             {SOURCE_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                         </select>
                     </div>
 
                     <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 p-4 text-center">
-                        <FileSpreadsheet className="mx-auto h-8 w-8 text-gray-400" />
-                        <p className="mt-2 text-xs font-semibold text-gray-700">{file?.name ?? 'No CSV selected'}</p>
-                        <p className="mt-1 text-[10px] uppercase tracking-widest text-gray-400">Excel exports should be saved as CSV first</p>
+                        {fileMode === 'pdf' ? <FileText className="mx-auto h-8 w-8 text-gray-400" /> : <FileSpreadsheet className="mx-auto h-8 w-8 text-gray-400" />}
+                        <p className="mt-2 text-xs font-semibold text-gray-700">{file?.name ?? 'No file selected'}</p>
+                        <p className="mt-1 text-[10px] uppercase tracking-widest text-gray-400">CSV ingestion, Excel preview, PDF bank statement OCR gate</p>
                     </div>
 
-                    {preview && (
+                    {csvPreview && (
                         <>
                             <div className="grid grid-cols-2 gap-2 text-center">
-                                <Metric label="Rows" value={preview.total_rows} />
-                                <Metric label="Ready" value={preview.audit_ready_rows} />
-                                <Metric label="Score" value={preview.readiness_score} />
-                                <Metric label="Issues" value={preview.issues.length} />
+                                <Metric label="Rows" value={csvPreview.total_rows} />
+                                <Metric label="Ready" value={csvPreview.audit_ready_rows} />
+                                <Metric label="Score" value={csvPreview.readiness_score} />
+                                <Metric label="Issues" value={csvPreview.issues.length} />
                             </div>
-                            <div className="rounded-lg bg-gray-50 p-2 text-[10px] text-gray-500 break-all">
-                                Source hash: {preview.source_file_hash}
+                            <HashBox hash={csvPreview.source_file_hash} />
+                        </>
+                    )}
+
+                    {excelPreview && (
+                        <>
+                            <div className="grid grid-cols-2 gap-2 text-center">
+                                <Metric label="Sheets" value={excelPreview.sheet_count} />
+                                <Metric label="Rows" value={excelPreview.total_rows} />
+                                <Metric label="Ready" value={excelPreview.audit_ready_rows} />
+                                <Metric label="Score" value={excelPreview.readiness_score} />
                             </div>
+                            <HashBox hash={excelPreview.source_file_hash} />
+                        </>
+                    )}
+
+                    {pdfPreview && (
+                        <>
+                            <div className="grid grid-cols-2 gap-2 text-center">
+                                <Metric label="Status" value={pdfPreview.status} />
+                                <Metric label="OCR" value={pdfPreview.ocr_provider ?? 'Pending'} />
+                                <Metric label="Review" value={pdfPreview.human_review_required ? 'Yes' : 'No'} />
+                                <Metric label="Ingest" value={pdfPreview.can_ingest ? 'Ready' : 'Gate'} />
+                            </div>
+                            <HashBox hash={pdfPreview.source_file_hash} />
                         </>
                     )}
 
                     <button
                         onClick={ingest}
-                        disabled={!preview?.can_ingest || !uuid || !file || ingesting}
+                        disabled={!canIngestCsv || !uuid || !file || ingesting}
                         className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
                     >
                         {ingesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                        Ingest Audit-Ready Rows
+                        Ingest CSV Audit-Ready Rows
                     </button>
+
+                    {fileMode === 'pdf' && (
+                        <button
+                            onClick={extractPdf}
+                            disabled={!file || extracting}
+                            className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-100"
+                        >
+                            {extracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ScanText className="h-4 w-4" />}
+                            Run PDF OCR Extract
+                        </button>
+                    )}
                 </div>
 
                 <div className="space-y-4">
@@ -175,7 +271,7 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
                         </div>
                     )}
 
-                    {preview && (
+                    {csvPreview && (
                         <>
                             <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
                                 <h2 className="text-sm font-bold text-gray-900">Column Mapping</h2>
@@ -196,46 +292,41 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
                                 </div>
                             </div>
 
-                            {topIssues.length > 0 && (
-                                <div className="rounded-lg border border-amber-100 bg-white p-4 shadow-sm">
-                                    <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900"><AlertTriangle className="h-4 w-4 text-amber-500" /> Data Quality Issues</h2>
-                                    <div className="mt-3 divide-y divide-gray-100">
-                                        {topIssues.map((issue, index) => (
-                                            <div key={`${issue.title}-${index}`} className="py-2 text-xs">
-                                                <span className="font-bold text-gray-900">{issue.severity}</span>
-                                                <span className="text-gray-500"> · {issue.row_number ? `Row ${issue.row_number}` : 'Mapping'} · {issue.title}</span>
-                                                <p className="mt-1 text-gray-500">{issue.recommended_action}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className="overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">
-                                <div className="border-b border-gray-100 px-4 py-3 text-sm font-bold text-gray-900">Audit-Ready Preview</div>
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full text-left text-xs">
-                                        <thead className="bg-gray-50 text-[10px] uppercase tracking-widest text-gray-500">
-                                            <tr>
-                                                {['date', 'ref', 'description', 'signed_amount', 'mapped_category', 'risk_flags'].map(column => <th key={column} className="px-3 py-2">{column}</th>)}
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-gray-100">
-                                            {rows.map((row, index) => (
-                                                <tr key={index}>
-                                                    <td className="px-3 py-2">{String(row.date ?? '')}</td>
-                                                    <td className="px-3 py-2 font-mono">{String(row.ref ?? '')}</td>
-                                                    <td className="max-w-xs truncate px-3 py-2">{String(row.description ?? '')}</td>
-                                                    <td className="px-3 py-2">{String(row.signed_amount ?? '')}</td>
-                                                    <td className="px-3 py-2">{String(row.mapped_category ?? '')}</td>
-                                                    <td className="px-3 py-2">{Array.isArray(row.risk_flags) ? row.risk_flags.join(', ') : ''}</td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                            <IssueList issues={topIssues} />
+                            <PreviewTable rows={rows} />
                         </>
+                    )}
+
+                    {excelPreview && (
+                        <div className="space-y-4">
+                            <div className="rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-xs text-blue-800">
+                                Excel workbook preview is connected to backend. Backend ingestion is CSV-only today, so convert the chosen sheet to CSV before final ingestion.
+                            </div>
+                            {excelPreview.sheets.map(sheet => (
+                                <div key={sheet.sheet_name} className="rounded-lg border border-gray-100 bg-white shadow-sm">
+                                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-4 py-3">
+                                        <div>
+                                            <h2 className="text-sm font-bold text-gray-900">{sheet.sheet_name}</h2>
+                                            <p className="text-xs text-gray-500">{sheet.total_rows} rows · {sheet.audit_ready_rows} ready · score {sheet.readiness_score}</p>
+                                        </div>
+                                        <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] font-bold uppercase text-gray-600">{sheet.issues.length} issue(s)</span>
+                                    </div>
+                                    <PreviewTable rows={sheet.normalized_preview.slice(0, 6)} />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {pdfPreview && (
+                        <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+                            <h2 className="text-sm font-bold text-gray-900">PDF Bank Statement Intake</h2>
+                            <p className="mt-2 text-xs text-gray-500">{pdfPreview.recommended_action}</p>
+                            {pdfExtraction && (
+                                <pre className="mt-4 max-h-96 overflow-auto rounded-lg bg-gray-950 p-3 text-xs text-gray-100">
+                                    {JSON.stringify(pdfExtraction, null, 2)}
+                                </pre>
+                            )}
+                        </div>
                     )}
                 </div>
             </section>
@@ -243,11 +334,62 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
     )
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Metric({ label, value }: { label: string; value: number | string }) {
     return (
         <div className="rounded-lg border border-gray-100 bg-white p-3">
-            <div className="text-2xl font-black text-gray-900">{value}</div>
+            <div className="text-lg font-black text-gray-900 break-words">{value}</div>
             <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</div>
+        </div>
+    )
+}
+
+function HashBox({ hash }: { hash: string }) {
+    return <div className="rounded-lg bg-gray-50 p-2 text-[10px] text-gray-500 break-all">Source hash: {hash}</div>
+}
+
+function IssueList({ issues }: { issues: DataRefineryPreview['issues'] }) {
+    if (issues.length === 0) return null
+    return (
+        <div className="rounded-lg border border-amber-100 bg-white p-4 shadow-sm">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-gray-900"><AlertTriangle className="h-4 w-4 text-amber-500" /> Data Quality Issues</h2>
+            <div className="mt-3 divide-y divide-gray-100">
+                {issues.map((issue, index) => (
+                    <div key={`${issue.title}-${index}`} className="py-2 text-xs">
+                        <span className="font-bold text-gray-900">{issue.severity}</span>
+                        <span className="text-gray-500"> · {issue.row_number ? `Row ${issue.row_number}` : 'Mapping'} · {issue.title}</span>
+                        <p className="mt-1 text-gray-500">{issue.recommended_action}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+function PreviewTable({ rows }: { rows: Record<string, unknown>[] }) {
+    return (
+        <div className="overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm">
+            <div className="border-b border-gray-100 px-4 py-3 text-sm font-bold text-gray-900">Audit-Ready Preview</div>
+            <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-xs">
+                    <thead className="bg-gray-50 text-[10px] uppercase tracking-widest text-gray-500">
+                        <tr>
+                            {['date', 'ref', 'description', 'signed_amount', 'mapped_category', 'risk_flags'].map(column => <th key={column} className="px-3 py-2">{column}</th>)}
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                        {rows.map((row, index) => (
+                            <tr key={index}>
+                                <td className="px-3 py-2">{String(row.date ?? '')}</td>
+                                <td className="px-3 py-2 font-mono">{String(row.ref ?? '')}</td>
+                                <td className="max-w-xs truncate px-3 py-2">{String(row.description ?? '')}</td>
+                                <td className="px-3 py-2">{String(row.signed_amount ?? '')}</td>
+                                <td className="px-3 py-2">{String(row.mapped_category ?? '')}</td>
+                                <td className="px-3 py-2">{Array.isArray(row.risk_flags) ? row.risk_flags.join(', ') : ''}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
         </div>
     )
 }

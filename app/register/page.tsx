@@ -8,8 +8,9 @@ import { Eye, EyeOff, Shield, Loader2, AlertCircle, CheckCircle2 } from 'lucide-
 
 const ROLES = [
     { value: 'admin', label: 'Platform Administrator' },
-    { value: 'manager', label: 'Event Manager' },
-    { value: 'staff', label: 'Venue Staff' },
+    { value: 'auditor', label: 'Auditor' },
+    { value: 'reviewer', label: 'Reviewer' },
+    { value: 'manager', label: 'Audit Manager' },
 ] as const
 
 function PasswordStrength({ password }: { password: string }) {
@@ -111,10 +112,10 @@ export default function RegisterPage() {
                         <div className="w-10 h-10 bg-[#002776] rounded-xl flex items-center justify-center shadow-md">
                             <Shield className="w-5 h-5 text-white" />
                         </div>
-                        <span className="text-2xl font-black text-[#002776] tracking-tight">Bandhan Vatika</span>
+                        <span className="text-2xl font-black text-[#002776] tracking-tight">Arkashri</span>
                     </div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">Create your account</h1>
-                    <p className="text-gray-500 text-sm mt-1">Join the Bandhan Vatika portal</p>
+                    <p className="text-gray-500 text-sm mt-1">Join the Arkashri audit workspace</p>
                 </div>
 
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
@@ -228,7 +229,7 @@ export default function RegisterPage() {
                                 className="mt-1 w-4 h-4 rounded border-gray-300 text-[#002776] focus:ring-[#002776] cursor-pointer shrink-0"
                             />
                             <label htmlFor="tos" className="text-xs text-gray-600 leading-relaxed cursor-pointer">
-                                I acknowledge and agree to the <Link href="/terms" className="text-[#002776] hover:underline font-semibold">Terms of Service</Link> for accessing the Bandhan Vatika portal.
+                                I acknowledge and agree to the <Link href="/terms" className="text-[#002776] hover:underline font-semibold">Terms of Service</Link> for accessing the Arkashri workspace.
                             </label>
                         </div>
 
@@ -255,7 +256,7 @@ export default function RegisterPage() {
                 </div>
 
                 <p className="text-center text-xs text-gray-400 mt-6">
-                    By creating an account you agree to Bandhan Vatika's Terms of Service and Privacy Policy. Enterprise-grade security — all data encrypted at rest and in transit.
+                    By creating an account you agree to Arkashri's Terms of Service and Privacy Policy. Enterprise-grade security — all data encrypted at rest and in transit.
                 </p>
             </div>
         </div>
