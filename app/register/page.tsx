@@ -8,9 +8,8 @@ import { Eye, EyeOff, Shield, Loader2, AlertCircle, CheckCircle2 } from 'lucide-
 
 const ROLES = [
     { value: 'admin', label: 'Platform Administrator' },
-    { value: 'operator', label: 'Audit Operator' },
-    { value: 'auditor', label: 'Audit Professional' },
-    { value: 'reviewer', label: 'Quality Reviewer' },
+    { value: 'manager', label: 'Event Manager' },
+    { value: 'staff', label: 'Venue Staff' },
 ] as const
 
 function PasswordStrength({ password }: { password: string }) {
@@ -88,6 +87,7 @@ export default function RegisterPage() {
             // Registration succeeded — set auth store with real user data
             login({
                 id: data.user.id,
+                tenantId: data.user.tenant_id ?? 'default_tenant',
                 fullName: data.user.full_name,
                 email: data.user.email,
                 role: data.user.role.toLowerCase() as any,
@@ -111,10 +111,10 @@ export default function RegisterPage() {
                         <div className="w-10 h-10 bg-[#002776] rounded-xl flex items-center justify-center shadow-md">
                             <Shield className="w-5 h-5 text-white" />
                         </div>
-                        <span className="text-2xl font-black text-[#002776] tracking-tight">Arkashri</span>
+                        <span className="text-2xl font-black text-[#002776] tracking-tight">Bandhan Vatika</span>
                     </div>
                     <h1 className="text-2xl font-black text-gray-900 tracking-tight">Create your account</h1>
-                    <p className="text-gray-500 text-sm mt-1">Join the universal audit command surface</p>
+                    <p className="text-gray-500 text-sm mt-1">Join the Bandhan Vatika portal</p>
                 </div>
 
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
@@ -228,7 +228,7 @@ export default function RegisterPage() {
                                 className="mt-1 w-4 h-4 rounded border-gray-300 text-[#002776] focus:ring-[#002776] cursor-pointer shrink-0"
                             />
                             <label htmlFor="tos" className="text-xs text-gray-600 leading-relaxed cursor-pointer">
-                                I acknowledge Arkashri is an AI-assisted decision support system. I agree to the <Link href="/terms" className="text-[#002776] hover:underline font-semibold">Terms of Service</Link> and understand that all outputs require human review by a qualified professional before use in any compliance context.
+                                I acknowledge and agree to the <Link href="/terms" className="text-[#002776] hover:underline font-semibold">Terms of Service</Link> for accessing the Bandhan Vatika portal.
                             </label>
                         </div>
 
@@ -255,7 +255,7 @@ export default function RegisterPage() {
                 </div>
 
                 <p className="text-center text-xs text-gray-400 mt-6">
-                    By creating an account you agree to Arkashri's Terms of Service and Privacy Policy. Enterprise-grade security — all data encrypted at rest and in transit.
+                    By creating an account you agree to Bandhan Vatika's Terms of Service and Privacy Policy. Enterprise-grade security — all data encrypted at rest and in transit.
                 </p>
             </div>
         </div>

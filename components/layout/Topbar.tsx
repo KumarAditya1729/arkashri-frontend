@@ -22,8 +22,11 @@ export function Topbar() {
         <header className="h-14 border-b bg-[#002776] text-white flex items-center justify-between px-6 sticky top-0 z-50">
             <div className="flex items-center gap-4">
                 <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-                    <h1 className="font-bold tracking-tight">Arkashri</h1>
-                    <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full uppercase">Universal Audit Platform</span>
+                    <img src="/logo.png" alt="Bandhan Vatika Logo" className="h-10 w-auto rounded-full object-cover border border-white/20" />
+                    <div className="flex flex-col">
+                        <h1 className="font-bold tracking-tight text-lg leading-tight">Bandhan Vatika</h1>
+                        <span className="text-[10px] text-blue-200 tracking-wider uppercase">Banquet Hall</span>
+                    </div>
                 </Link>
             </div>
 

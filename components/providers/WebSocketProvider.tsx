@@ -49,7 +49,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
         const currentUser = useAuthStore.getState().user
         if (!currentUser) return
 
-        const tenantId = currentUser.organisation === 'Arkashri Systems' ? 'default_tenant' : currentUser.id
+        const tenantId = currentUser.tenantId ?? process.env.NEXT_PUBLIC_API_TENANT ?? 'default_tenant'
         const jurisdiction = 'IN'
         const wsBase = (process.env.NEXT_PUBLIC_WS_URL ?? 'ws://localhost:8001').replace(/\/+$/, '').replace(/\/ws$/, '')
 
