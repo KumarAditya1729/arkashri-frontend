@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Check, ChevronRight } from 'lucide-react'
+import { Check } from 'lucide-react'
 
 interface Step {
     name: string
@@ -12,6 +12,8 @@ interface Step {
 
 const STEPS: Step[] = [
     { name: 'Planning', path: 'planning' },
+    { name: 'Data', path: 'data-refinery' },
+    { name: 'Automation', path: 'automation' },
     { name: 'Risks', path: 'risks' },
     { name: 'Controls', path: 'controls' },
     { name: 'Evidence', path: 'evidence' },
@@ -36,7 +38,6 @@ export function EngagementStepper({ engagementId }: { engagementId: string }) {
                 {STEPS.map((step, index) => {
                     const isCompleted = index < effectiveIndex
                     const isActive = index === effectiveIndex
-                    const isUpcoming = index > effectiveIndex
                     const href = `/engagement/${engagementId}/${step.path}`
 
                     return (

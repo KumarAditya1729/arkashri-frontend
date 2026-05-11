@@ -53,25 +53,25 @@ export default function SignInPage() {
                             <Shield className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <div className="text-white font-bold text-xl tracking-tight">Arkashri</div>
-                            <div className="text-blue-300 text-xs uppercase tracking-wider">Universal Audit Platform</div>
+                            <div className="text-white font-bold text-xl tracking-tight">Bandhan Vatika</div>
+                            <div className="text-blue-300 text-xs uppercase tracking-wider">Banquet Hall</div>
                         </div>
                     </div>
 
                     <h2 className="text-4xl font-black text-white leading-tight mb-4">
-                        Infrastructure-Grade<br />
-                        <span className="text-blue-300">Financial Intelligence</span>
+                        Premium Event Space<br />
+                        <span className="text-blue-300">For Your Special Moments</span>
                     </h2>
                     <p className="text-blue-200 text-base leading-relaxed max-w-sm">
-                        Deterministic, multi-tenant, legally reconstructible audit command surface for enterprise assurance teams.
+                        Elegant, spacious, and perfectly managed banquet hall for weddings, events, and celebrations.
                     </p>
                 </div>
 
                 <div className="relative space-y-4">
                     {[
-                        { label: 'SOC 2 Type II', detail: 'Certified infrastructure' },
-                        { label: 'PCAOB AS 2110', detail: 'Regulatory binding' },
-                        { label: 'ISA 315 (Revised 2019)', detail: 'Risk-based audit approach' },
+                        { label: 'Weddings', detail: 'Grand spaces for your big day' },
+                        { label: 'Events', detail: 'Corporate and personal gatherings' },
+                        { label: 'Celebrations', detail: 'Memories to last a lifetime' },
                     ].map((item) => (
                         <div key={item.label} className="flex items-center gap-3">
                             <div className="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0" />
@@ -90,13 +90,13 @@ export default function SignInPage() {
                     {/* Mobile logo */}
                     <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
                         <Shield className="w-8 h-8 text-[#002776]" />
-                        <span className="text-xl font-black text-[#002776]">Arkashri</span>
+                        <span className="text-xl font-black text-[#002776]">Bandhan Vatika</span>
                     </div>
 
                     <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
                         <div className="mb-8">
                             <h1 className="text-2xl font-black text-gray-900 tracking-tight">Welcome back</h1>
-                            <p className="text-gray-500 text-sm mt-1">Sign in to your audit workspace</p>
+                            <p className="text-gray-500 text-sm mt-1">Sign in to your dashboard</p>
                         </div>
 
                         {error && (
@@ -163,7 +163,7 @@ export default function SignInPage() {
                                     className="mt-1 w-4 h-4 rounded border-gray-300 text-[#002776] focus:ring-[#002776] cursor-pointer shrink-0"
                                 />
                                 <label htmlFor="tos" className="text-xs text-gray-600 leading-relaxed cursor-pointer">
-                                    I acknowledge Arkashri is an AI-assisted decision support system. I agree to the <Link href="/terms" className="text-[#002776] hover:underline font-semibold">Terms of Service</Link> and understand that all outputs require human review by a qualified professional before use in any compliance context.
+                                    I acknowledge and agree to the <Link href="/terms" className="text-[#002776] hover:underline font-semibold">Terms of Service</Link> for accessing the Bandhan Vatika portal.
                                 </label>
                             </div>
 
@@ -181,7 +181,7 @@ export default function SignInPage() {
 
                         <div className="mt-6 pt-6 border-t border-gray-100">
                             <p className="text-center text-sm text-gray-500">
-                                New to Arkashri?{' '}
+                                New to Bandhan Vatika?{' '}
                                 <Link href="/register" className="text-[#002776] font-semibold hover:underline">
                                     Create an account
                                 </Link>

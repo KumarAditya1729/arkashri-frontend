@@ -8,6 +8,7 @@ export type UserRole = 'admin' | 'operator' | 'reviewer' | 'auditor'
 
 export interface AuthUser {
     id: string
+    tenantId: string
     fullName: string
     email: string
     role: UserRole
@@ -28,6 +29,7 @@ interface AuthState {
 function mapBackendUser(res: Awaited<ReturnType<typeof verifySession>>): AuthUser {
     return {
         id: res.user.email,
+        tenantId: res.user.tenant_id,
         fullName: res.user.full_name,
         email: res.user.email,
         role: res.user.role as UserRole,

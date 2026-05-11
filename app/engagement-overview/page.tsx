@@ -6,6 +6,7 @@ import { ArrowRight, Search, Filter, Loader2, Plus, X, CalendarClock, CheckCircl
 import { useState, useEffect } from 'react'
 import { getEngagements, createEngagement, getApiErrorMessage } from '@/lib/api'
 import { AUDIT_TYPE_DEFINITIONS, getAuditTypeDefinition, normalizeAuditTypeTitle } from '@/lib/audit-types'
+import { useAuthStore } from '@/store/authStore'
 
 type AuditStatus = 'In Progress' | 'Planning' | 'Review' | 'Completed' | 'Not Started'
 
@@ -57,6 +58,7 @@ const JURISDICTIONS = [
 ]
 
 export default function EngagementOverviewPage() {
+    const tenantId = useAuthStore((s) => s.user?.tenantId ?? process.env.NEXT_PUBLIC_API_TENANT ?? 'default_tenant')
     const [search, setSearch] = useState('')
     const [statusFilter, setStatusFilter] = useState<AuditStatus | 'All'>('All')
     const [ALL_ENGAGEMENTS, setAllEngagements] = useState<{ id: string; type: string; client: string; status: AuditStatus; risk: string; period: string }[]>([])
@@ -69,7 +71,6 @@ export default function EngagementOverviewPage() {
         client_name: '',
         engagement_type: AUDIT_TYPE_DEFINITIONS[0].title,
         jurisdiction: 'IN',
-        tenant_id: 'default_tenant',
     })
     const selectedAuditType = getAuditTypeDefinition(form.engagement_type)
 
@@ -102,6 +103,7 @@ export default function EngagementOverviewPage() {
         try {
             await createEngagement({
                 ...form,
+                tenant_id: tenantId,
                 engagement_type: selectedAuditType.backendType,
                 auditType: selectedAuditType.workflowType,
                 independence_cleared: true,  // Admin creating via UI has done manual verification
@@ -109,7 +111,7 @@ export default function EngagementOverviewPage() {
             })
             
             setShowModal(false)
-            setForm({ client_name: '', engagement_type: AUDIT_TYPE_DEFINITIONS[0].title, jurisdiction: 'IN', tenant_id: 'default_tenant' })
+            setForm({ client_name: '', engagement_type: AUDIT_TYPE_DEFINITIONS[0].title, jurisdiction: 'IN' })
             loadEngagements()
         } catch (err: unknown) {
             setCreateError(getApiErrorMessage(err, 'Failed to create engagement. Please try again.'))

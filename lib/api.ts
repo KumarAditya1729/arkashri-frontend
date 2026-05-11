@@ -111,7 +111,7 @@ export interface EvidenceLedgerEntry {
         network: string
         tx_reference: string
         attestation_hash: string
-        provider_payload: any
+        provider_payload: Record<string, unknown>
         created_at: string
     }[]
 }
@@ -482,6 +482,164 @@ export async function uploadEvidence(engagementUuid: string, file: File, testRef
 
 export async function deleteEvidence(engagementUuid: string, evidenceId: string): Promise<void> {
     return apiFetch<void>(`/api/v1/engagements/${engagementUuid}/evidence/${evidenceId}`, { method: 'DELETE' })
+}
+
+// Data Refinery
+export type DataRefinerySourceType = 'bank_statement' | 'books_ledger' | 'sales_register' | 'purchase_register' | 'generic_ledger'
+
+export interface DataRefineryIssue {
+    severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW'
+    row_number: number | null
+    field: string | null
+    title: string
+    recommended_action: string
+}
+
+export interface DataRefineryPreview {
+    source_type: string
+    source_file_hash: string
+    headers: string[]
+    suggested_mapping: Record<string, string>
+    total_rows: number
+    audit_ready_rows: number
+    readiness_score: number
+    can_ingest: boolean
+    issues: DataRefineryIssue[]
+    normalized_preview: Record<string, unknown>[]
+    category_breakdown: Record<string, number>
+    risk_flag_breakdown: Record<string, number>
+}
+
+export interface DataRefineryIngestResult {
+    batch_id: string
+    engagement_id: string
+    source_type: string
+    source_file_hash: string
+    records_submitted: number
+    records_ingested: number
+    duplicate_refs: string[]
+    issues: DataRefineryIssue[]
+    category_breakdown: Record<string, number>
+    risk_flag_breakdown: Record<string, number>
+}
+
+function refineryFormData(file: File, sourceType: DataRefinerySourceType, mapping?: Record<string, string>) {
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('source_type', sourceType)
+    if (mapping) fd.append('column_mapping_json', JSON.stringify(mapping))
+    return fd
+}
+
+export async function previewDataRefineryCsv(
+    file: File,
+    sourceType: DataRefinerySourceType,
+    mapping?: Record<string, string>,
+): Promise<DataRefineryPreview> {
+    return apiFetch<DataRefineryPreview>('/api/v1/data-refinery/preview', {
+        method: 'POST',
+        body: refineryFormData(file, sourceType, mapping),
+    })
+}
+
+export async function ingestDataRefineryCsv(
+    engagementUuid: string,
+    file: File,
+    sourceType: DataRefinerySourceType,
+    mapping?: Record<string, string>,
+): Promise<DataRefineryIngestResult> {
+    return apiFetch<DataRefineryIngestResult>(`/api/v1/data-refinery/engagements/${engagementUuid}/ingest-csv`, {
+        method: 'POST',
+        body: refineryFormData(file, sourceType, mapping),
+    })
+}
+
+// Big 4 Automation Engine
+export interface AuditAutomationPack {
+    engagement_id: string
+    client_name: string
+    audit_type: string
+    standards_framework: string
+    risk_intelligence: {
+        transaction_count: number
+        total_value: number
+        materiality_proxy: number
+        category_breakdown: Record<string, number>
+        risk_flag_breakdown: Record<string, number>
+        findings: Record<string, unknown>[]
+    }
+    working_papers: {
+        pack_id: string
+        client_name: string
+        standards_framework: string
+        generated_at: string
+        sections: Record<string, unknown>[]
+        schedules: Record<string, unknown>[]
+        top_findings: Record<string, unknown>[]
+        evidence_count: number
+        open_risk_count: number
+        untested_control_count: number
+    }
+    report_readiness: {
+        score: number
+        checks: { code: string; passed: boolean; message: string }[]
+        open_high_risk_count: number
+        high_ai_finding_count: number
+        suggested_opinion_type: string
+        human_review_required: boolean
+        basis: string
+    }
+}
+
+export interface AuditAutomationRunResult {
+    created_risk_count: number
+    created_control_count: number
+    report_job_id: string | null
+    pack: AuditAutomationPack
+}
+
+export async function getAuditAutomationPack(engagementUuid: string): Promise<AuditAutomationPack> {
+    return apiFetch<AuditAutomationPack>(`/api/v1/audit-automation/engagements/${engagementUuid}/pack`)
+}
+
+export async function runAuditAutomationPack(engagementUuid: string): Promise<AuditAutomationRunResult> {
+    return apiFetch<AuditAutomationRunResult>(`/api/v1/audit-automation/engagements/${engagementUuid}/run`, {
+        method: 'POST',
+        body: JSON.stringify({ create_risks: true, create_controls: true, persist_report: true }),
+    })
+}
+
+export async function createAuditSamplingPlan(engagementUuid: string, sampleSize = 25): Promise<Record<string, unknown>> {
+    return apiFetch<Record<string, unknown>>(`/api/v1/audit-automation/engagements/${engagementUuid}/sampling-plan`, {
+        method: 'POST',
+        body: JSON.stringify({ sample_size: sampleSize }),
+    })
+}
+
+export async function runAuditAgents(engagementUuid: string): Promise<Record<string, unknown>> {
+    return apiFetch<Record<string, unknown>>(`/api/v1/audit-automation/engagements/${engagementUuid}/agents/run`, {
+        method: 'POST',
+    })
+}
+
+export async function createConfirmationRequest(
+    engagementUuid: string,
+    payload: { counterparty: string; confirmation_type?: string; amount?: number; due_date?: string; contact_email?: string },
+): Promise<Record<string, unknown>> {
+    return apiFetch<Record<string, unknown>>(`/api/v1/audit-automation/engagements/${engagementUuid}/confirmations`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    })
+}
+
+export async function recordManagementResponse(
+    engagementUuid: string,
+    payload: { finding_code: string; response_text: string; owner?: string; target_date?: string; status?: string },
+): Promise<Record<string, unknown>> {
+    return apiFetch<Record<string, unknown>>(`/api/v1/audit-automation/engagements/${engagementUuid}/management-responses`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    })
 }
 
 // Approvals
