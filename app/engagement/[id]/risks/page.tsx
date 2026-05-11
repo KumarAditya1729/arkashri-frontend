@@ -45,17 +45,29 @@ export default function RisksPage({ params }: { params: Promise<{ id: string }> 
 
     useEffect(() => {
         if (!uuid) return
-        setLoading(true)
-        getRisks(uuid).then(data => {
-            if (data.length > 0) {
-                setRisks(data)
-                setIsLive(true)
+        let cancelled = false
+        const loadRisks = async () => {
+            setLoading(true)
+            try {
+                const data = await getRisks(uuid)
+                if (!cancelled) {
+                    if (data.length > 0) {
+                        setRisks(data)
+                        setIsLive(true)
+                    }
+                    setError(null)
+                }
+            } catch (err) {
+                if (!cancelled) {
+                    setRisks([])
+                    setError(getApiErrorMessage(err, 'Unable to load risks from the backend.'))
+                }
+            } finally {
+                if (!cancelled) setLoading(false)
             }
-            setError(null)
-        }).catch(err => {
-            setRisks([])
-            setError(getApiErrorMessage(err, 'Unable to load risks from the backend.'))
-        }).finally(() => setLoading(false))
+        }
+        void loadRisks()
+        return () => { cancelled = true }
     }, [uuid])
 
     const filtered = filter === 'All' ? risks : risks.filter(r => r.risk_status === filter)

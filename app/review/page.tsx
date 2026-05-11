@@ -3,6 +3,7 @@
 import { AuditShell } from '@/components/layout/AuditShell'
 import { useState, useEffect } from 'react'
 import { Eye, CheckCircle2, XCircle, MessageSquare, Clock, ChevronDown, ChevronUp, Send, Loader2 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { getApprovals, actionApproval, getApiErrorMessage } from '@/lib/api'
 
 type ReviewStatus = 'Approved' | 'Changes Required' | 'Pending' | 'In Review'
@@ -20,7 +21,7 @@ interface ReviewItem {
 
 const EMPTY_REVIEW_ITEMS: ReviewItem[] = []
 
-const statusConfig: Record<ReviewStatus, { icon: any; color: string; bg: string }> = {
+const statusConfig: Record<ReviewStatus, { icon: LucideIcon; color: string; bg: string }> = {
     Approved: { icon: CheckCircle2, color: 'text-green-700', bg: 'bg-green-100' },
     'Changes Required': { icon: XCircle, color: 'text-red-700', bg: 'bg-red-100' },
     'In Review': { icon: Eye, color: 'text-blue-700', bg: 'bg-blue-100' },

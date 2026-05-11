@@ -29,7 +29,6 @@ function CircularGauge({ score, grade }: { score: number; grade: string }) {
     const stroke = 12
     const cx = 100
     const cy = 100
-    const circumference = 2 * Math.PI * radius
     // Gauge arc: 270° sweep starting from -225° (bottom-left), ending at 45° (bottom-right)
     const arcStart = -225 * (Math.PI / 180)
     const arcTotal = 270 * (Math.PI / 180)

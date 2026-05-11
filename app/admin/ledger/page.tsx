@@ -20,8 +20,8 @@ export default function AdminLedgerPage() {
             const data = await getAdminEvidenceLedger()
             setLedger(data)
             setError(null)
-        } catch (err: any) {
-            setError(err.message || 'Failed to fetch evidence ledger')
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to fetch evidence ledger')
         } finally {
             setLoading(false)
         }
@@ -165,5 +165,4 @@ export default function AdminLedgerPage() {
         </div>
     )
 }
-
 

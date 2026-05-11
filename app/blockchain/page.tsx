@@ -8,19 +8,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { 
-  Link, 
   Shield, 
   CheckCircle, 
   AlertCircle, 
-  Brain, 
   Network, 
   Activity, 
-  BarChart3, 
   Database, 
   Hash,
   Clock,
-  Zap,
-  Globe
 } from 'lucide-react'
 
 interface NetworkStatus {
@@ -42,25 +37,33 @@ interface AnchoredEvidence {
   multiChainHash: string
 }
 
+interface VerificationNetworkResult {
+  verified?: boolean
+}
+
+interface VerificationResult {
+  overall_verified: boolean
+  multi_chain_consensus: boolean
+  network_results: Record<string, VerificationNetworkResult>
+}
+
 import { AuditShell } from '@/components/layout/AuditShell'
 
 export default function BlockchainPage() {
   const [networks, setNetworks] = useState<Record<string, NetworkStatus>>({})
   const [anchoredEvidence, setAnchoredEvidence] = useState<AnchoredEvidence[]>([])
-  const [selectedNetwork, setSelectedNetwork] = useState('polkadot')
   const [evidenceHash, setEvidenceHash] = useState('')
-  const [loading, setLoading] = useState(true)
   const [anchoring, setAnchoring] = useState(false)
   const [verifyHash, setVerifyHash] = useState('')
   const [verifying, setVerifying] = useState(false)
-  const [verifyResult, setVerifyResult] = useState<any>(null)
+  const [verifyResult, setVerifyResult] = useState<VerificationResult | null>(null)
 
   const handleVerifyEvidence = async () => {
     if (!verifyHash.trim()) return
 
     try {
       setVerifying(true)
-      const data = await import('@/lib/api').then(m => m.verifyMultiChainEvidence(verifyHash))
+      const data = await import('@/lib/api').then(m => m.verifyMultiChainEvidence(verifyHash)) as VerificationResult
       setVerifyResult(data)
     } catch (error) {
       console.error('Failed to verify evidence:', error)
@@ -77,7 +80,6 @@ export default function BlockchainPage() {
 
   const fetchNetworkStatus = async () => {
     try {
-      setLoading(true)
       const data = await import('@/lib/api').then(m => m.getMultiChainStatus())
       
       // Map the snake_case backend keys to the expected camelCase UI keys.
@@ -97,8 +99,6 @@ export default function BlockchainPage() {
       setNetworks(formattedNetworks)
     } catch (error) {
       console.error('Failed to fetch network status:', error)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -397,7 +397,7 @@ export default function BlockchainPage() {
                   
                   <div className="space-y-2">
                     <h4 className="text-sm font-medium">Network Results</h4>
-                    {Object.entries(verifyResult.network_results).map(([network, data]: [string, any]) => (
+                    {Object.entries(verifyResult.network_results).map(([network, data]) => (
                       <div key={network} className="flex items-center justify-between border-b pb-2 text-sm">
                         <div className="flex items-center space-x-2 capitalize">
                           {getNetworkIcon(network)}

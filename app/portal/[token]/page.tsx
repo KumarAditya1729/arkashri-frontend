@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import type { SVGProps } from "react";
 import { useParams } from "next/navigation";
 import { Building2, CheckCircle2, Clock, ShieldCheck, Activity, Eye, PlayCircle } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { apiFetch } from "@/lib/api";
 
@@ -15,8 +16,8 @@ type PortalData = {
   sealed_at: string | null;
   kyc_cleared: boolean;
   independence_cleared: boolean;
-  recent_activity: any[];
-  estimates_under_review: any[];
+  recent_activity: Record<string, unknown>[];
+  estimates_under_review: Record<string, unknown>[];
 };
 
 type TimelineEvent = {
@@ -45,8 +46,8 @@ export default function ClientPortal() {
         
         setPortalData(dashboardRes);
         setTimeline(timelineRes.timeline);
-      } catch (err: any) {
-        setError(err.message || "Invalid or expired access token.");
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Invalid or expired access token.");
       } finally {
         setLoading(false);
       }
@@ -198,7 +199,7 @@ export default function ClientPortal() {
   );
 }
 
-function LockIcon(props: any) {
+function LockIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

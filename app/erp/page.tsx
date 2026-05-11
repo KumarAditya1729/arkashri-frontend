@@ -7,7 +7,7 @@ import {
   Plug, Database, CheckCircle, AlertCircle, Settings,
   RefreshCw, Activity, Link2, ShieldCheck, HardDrive,
   UploadCloud, Zap, Globe, Lock, TrendingUp, ChevronRight,
-  Wifi, WifiOff, Clock, ArrowUpRight, Filter, Search
+  WifiOff, Clock, ArrowUpRight, Filter, Search
 } from 'lucide-react'
 import { AuditShell } from '@/components/layout/AuditShell'
 
@@ -192,7 +192,7 @@ export default function ERPPage() {
                 ERP Integration Hub
               </h1>
               <p className="text-blue-200 text-sm leading-relaxed max-w-lg">
-                Establish secure, continuous data pipelines from client financial systems to Arkashri's AI analytics engine.
+                Establish secure, continuous data pipelines from client financial systems to Arkashri&apos;s AI analytics engine.
               </p>
             </div>
 
@@ -559,7 +559,7 @@ export default function ERPPage() {
                     {/* ── Ingestion Rules Tab ── */}
                     <TabsContent value="ingestion" className="mt-0 space-y-5">
                       <p className="text-sm text-gray-500 leading-relaxed">
-                        Configure how frequently Arkashri's AI fetches and analyzes records from <strong>{selected.name}</strong>.
+                        Configure how frequently Arkashri&apos;s AI fetches and analyzes records from <strong>{selected.name}</strong>.
                       </p>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

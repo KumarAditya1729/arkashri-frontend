@@ -4,13 +4,14 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuthStore } from '../../store/authStore'
+import type { UserRole } from '../../store/authStore'
 import { Eye, EyeOff, Shield, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 const ROLES = [
     { value: 'admin', label: 'Platform Administrator' },
     { value: 'auditor', label: 'Auditor' },
     { value: 'reviewer', label: 'Reviewer' },
-    { value: 'manager', label: 'Audit Manager' },
+    { value: 'operator', label: 'Audit Manager' },
 ] as const
 
 function PasswordStrength({ password }: { password: string }) {
@@ -91,12 +92,12 @@ export default function RegisterPage() {
                 tenantId: data.user.tenant_id ?? 'default_tenant',
                 fullName: data.user.full_name,
                 email: data.user.email,
-                role: data.user.role.toLowerCase() as any,
+                role: data.user.role.toLowerCase() as UserRole,
                 organisation: form.organisation,
                 avatarInitials: data.user.initials,
             })
             router.push('/dashboard')
-        } catch (err) {
+        } catch {
             setError('Network error. Please check your connection and try again.')
         }
         setLoading(false)
@@ -256,7 +257,7 @@ export default function RegisterPage() {
                 </div>
 
                 <p className="text-center text-xs text-gray-400 mt-6">
-                    By creating an account you agree to Arkashri's Terms of Service and Privacy Policy. Enterprise-grade security — all data encrypted at rest and in transit.
+                    By creating an account you agree to Arkashri&apos;s Terms of Service and Privacy Policy. Enterprise-grade security — all data encrypted at rest and in transit.
                 </p>
             </div>
         </div>

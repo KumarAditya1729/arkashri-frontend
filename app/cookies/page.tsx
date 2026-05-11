@@ -56,7 +56,7 @@ export default function CookiesPage() {
                     </div>
 
                     <p className="mt-8 text-gray-500 italic text-xs">
-                        By continuing to use the Arkashri dashboard, you acknowledge the necessity of these core infrastructure elements as detailed in the DPDP Act provisions regarding "necessary technical processing".
+                        By continuing to use the Arkashri dashboard, you acknowledge the necessity of these core infrastructure elements as detailed in the DPDP Act provisions regarding &quot;necessary technical processing&quot;.
                     </p>
 
                     <div className="mt-10 pt-6 border-t border-gray-100 flex gap-4 justify-end">

@@ -3,8 +3,9 @@
 import { AuditShell } from '@/components/layout/AuditShell'
 import { useState, useEffect } from 'react'
 import {
-    Plus, CheckCircle2, XCircle, Clock, FlaskConical, Loader2, X, AlertTriangle, Target
+    Plus, CheckCircle2, XCircle, Clock, FlaskConical, Loader2, X, Target
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { getEngagements, EngagementResponse, getRisks, RiskResponse, getApiErrorMessage } from '@/lib/api'
 
 type TestStatus = 'Pass' | 'Fail' | 'In Progress' | 'Pending'
@@ -22,7 +23,7 @@ interface TestProcedure {
     notes: string
 }
 
-const statusConfig: Record<TestStatus, { icon: any; color: string; bg: string }> = {
+const statusConfig: Record<TestStatus, { icon: LucideIcon; color: string; bg: string }> = {
     Pass:        { icon: CheckCircle2, color: 'text-green-700', bg: 'bg-green-100' },
     Fail:        { icon: XCircle,     color: 'text-red-700',   bg: 'bg-red-100' },
     'In Progress':{ icon: Clock,      color: 'text-blue-700',  bg: 'bg-blue-100' },
@@ -32,7 +33,7 @@ const statusConfig: Record<TestStatus, { icon: any; color: string; bg: string }>
 export default function TestingPage() {
     const [engagements, setEngagements] = useState<EngagementResponse[]>([])
     const [selectedId, setSelectedId] = useState('')
-    const [risks, setRisks] = useState<RiskResponse[]>([])
+    const [, setRisks] = useState<RiskResponse[]>([])
     const [tests, setTests]   = useState<TestProcedure[]>([])
     const [selected, setSelected] = useState<TestProcedure | null>(null)
     const [loading, setLoading] = useState(true)
