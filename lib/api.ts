@@ -510,6 +510,41 @@ export interface DataRefineryPreview {
     risk_flag_breakdown: Record<string, number>
 }
 
+export interface ExcelRefinerySheetPreview {
+    sheet_name: string
+    headers: string[]
+    total_rows: number
+    audit_ready_rows: number
+    readiness_score: number
+    can_ingest: boolean
+    issues: DataRefineryIssue[]
+    normalized_preview: Record<string, unknown>[]
+    suggested_mapping?: Record<string, string>
+    category_breakdown?: Record<string, number>
+    risk_flag_breakdown?: Record<string, number>
+}
+
+export interface ExcelRefineryPreview {
+    source_type: string
+    source_file_hash: string
+    sheet_count: number
+    total_rows: number
+    audit_ready_rows: number
+    readiness_score: number
+    can_ingest: boolean
+    sheets: ExcelRefinerySheetPreview[]
+}
+
+export interface PdfBankStatementIntake {
+    source_type: string
+    source_file_hash: string
+    status: string
+    ocr_provider: string | null
+    can_ingest: boolean
+    recommended_action: string
+    human_review_required: boolean
+}
+
 export interface DataRefineryIngestResult {
     batch_id: string
     engagement_id: string
@@ -542,6 +577,34 @@ export async function previewDataRefineryCsv(
     })
 }
 
+export async function previewDataRefineryExcel(
+    file: File,
+    sourceType: DataRefinerySourceType,
+): Promise<ExcelRefineryPreview> {
+    return apiFetch<ExcelRefineryPreview>('/api/v1/data-refinery/preview-excel', {
+        method: 'POST',
+        body: refineryFormData(file, sourceType),
+    })
+}
+
+export async function previewBankStatementPdf(file: File): Promise<PdfBankStatementIntake> {
+    const fd = new FormData()
+    fd.append('file', file)
+    return apiFetch<PdfBankStatementIntake>('/api/v1/data-refinery/preview-bank-pdf', {
+        method: 'POST',
+        body: fd,
+    })
+}
+
+export async function extractBankStatementPdf(file: File): Promise<Record<string, unknown>> {
+    const fd = new FormData()
+    fd.append('file', file)
+    return apiFetch<Record<string, unknown>>('/api/v1/data-refinery/extract-bank-pdf', {
+        method: 'POST',
+        body: fd,
+    })
+}
+
 export async function ingestDataRefineryCsv(
     engagementUuid: string,
     file: File,
@@ -551,6 +614,166 @@ export async function ingestDataRefineryCsv(
     return apiFetch<DataRefineryIngestResult>(`/api/v1/data-refinery/engagements/${engagementUuid}/ingest-csv`, {
         method: 'POST',
         body: refineryFormData(file, sourceType, mapping),
+    })
+}
+
+// Specialist Audit Execution Engine
+export interface SpecialistAuditTypeInfo {
+    audit_type: string
+    name: string
+    safe_mode: boolean
+    objective: string
+    specialist_roles: string[]
+    evidence: string[]
+    procedures: string[]
+    red_flags: string[]
+}
+
+export interface SpecialistAuditCatalog {
+    engine_id: string
+    version: string
+    safe_execution_policy: string
+    audit_types: SpecialistAuditTypeInfo[]
+}
+
+export interface SpecialistEvidenceChecklistItem {
+    id: string
+    description: string
+    required: boolean
+}
+
+export interface SpecialistTestProgramItem {
+    test_ref: string
+    procedure: string
+    evidence_required: string[]
+    pass_condition: string
+}
+
+export interface SpecialistRiskRegisterItem {
+    risk_ref: string
+    title: string
+    severity: string
+    recommended_response: string
+}
+
+export interface SpecialistWorkprogram {
+    audit_type: string
+    name: string
+    safe_mode: boolean
+    objective: string
+    specialist_roles: string[]
+    scope_context: Record<string, unknown>
+    evidence_checklist: SpecialistEvidenceChecklistItem[]
+    test_program: SpecialistTestProgramItem[]
+    risk_register: SpecialistRiskRegisterItem[]
+    report_sections: string[]
+    closure_gates: string[]
+    human_review_required: boolean
+    workprogram_hash: string
+}
+
+export interface SpecialistRunResult {
+    run_id: string
+    workprogram: SpecialistWorkprogram
+}
+
+export async function getSpecialistAuditCatalog(): Promise<SpecialistAuditCatalog> {
+    return apiFetch<SpecialistAuditCatalog>('/api/v1/specialist-audits/catalog')
+}
+
+export async function getSpecialistWorkprogram(auditType: string): Promise<SpecialistWorkprogram> {
+    return apiFetch<SpecialistWorkprogram>(`/api/v1/specialist-audits/${auditType}/workprogram`)
+}
+
+export async function runSpecialistAudit(
+    engagementUuid: string,
+    auditType: string,
+    context: Record<string, unknown> = {},
+): Promise<SpecialistRunResult> {
+    return apiFetch<SpecialistRunResult>(`/api/v1/specialist-audits/engagements/${engagementUuid}/run`, {
+        method: 'POST',
+        body: JSON.stringify({ audit_type: auditType, context }),
+    })
+}
+
+// Engagement Integrations: Tally, GST, MCA
+export interface TallyImportResult {
+    import_type: string
+    source: string
+    imported_at: string
+    summary: Record<string, unknown>
+}
+
+export interface TallySummary {
+    imports: Record<string, unknown>
+}
+
+export interface GSTReconciliationResult {
+    recon_type: string
+    reconciled_at: string
+    summary: Record<string, unknown>
+    mismatches: Record<string, unknown>[]
+}
+
+export interface GSTReconciliationList {
+    reconciliations: Record<string, unknown>
+}
+
+export interface MCASnapshot {
+    engagement_id: string
+    mca_company_master: Record<string, unknown>
+}
+
+export async function getTallySummary(engagementUuid: string): Promise<TallySummary> {
+    return apiFetch<TallySummary>(`/api/v1/erp/engagements/${engagementUuid}/tally/summary`)
+}
+
+export async function importTallyTrialBalance(
+    engagementUuid: string,
+    payload: { raw_xml?: string; connection_id?: string; from_date?: string; to_date?: string },
+): Promise<TallyImportResult> {
+    return apiFetch<TallyImportResult>(`/api/v1/erp/engagements/${engagementUuid}/tally/trial-balance/import`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    })
+}
+
+export async function importTallyVouchers(
+    engagementUuid: string,
+    payload: { raw_xml?: string; connection_id?: string; from_date?: string; to_date?: string },
+): Promise<TallyImportResult> {
+    return apiFetch<TallyImportResult>(`/api/v1/erp/engagements/${engagementUuid}/tally/vouchers/import`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    })
+}
+
+export async function runGstReconciliation(
+    engagementUuid: string,
+    reconType: 'gstr1-vs-books' | 'gstr2b-vs-itc',
+    portalRecords: Record<string, unknown>[],
+): Promise<GSTReconciliationResult> {
+    return apiFetch<GSTReconciliationResult>(`/api/v1/gst/engagements/${engagementUuid}/reconcile/${reconType}`, {
+        method: 'POST',
+        body: JSON.stringify({ portal_records: portalRecords }),
+    })
+}
+
+export async function getGstReconciliations(engagementUuid: string): Promise<GSTReconciliationList> {
+    return apiFetch<GSTReconciliationList>(`/api/v1/gst/engagements/${engagementUuid}/reconciliations`)
+}
+
+export async function getMcaCompanyMaster(engagementUuid: string): Promise<MCASnapshot> {
+    return apiFetch<MCASnapshot>(`/api/v1/mca/engagements/${engagementUuid}/company-master`)
+}
+
+export async function enrichMcaCompanyMaster(
+    engagementUuid: string,
+    payload: { cin: string; manual_master_data?: Record<string, unknown> | null },
+): Promise<MCASnapshot> {
+    return apiFetch<MCASnapshot>(`/api/v1/mca/engagements/${engagementUuid}/company-master`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
     })
 }
 

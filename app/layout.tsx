@@ -7,8 +7,8 @@ import { WebSocketProvider } from "@/components/providers/WebSocketProvider";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Bandhan Vatika | Banquet Hall",
-  description: "Premium Banquet Hall for Weddings, Events, and Celebrations",
+  title: "Arkashri | AI Audit OS",
+  description: "AI-powered audit automation, evidence, risk, compliance and reporting platform.",
 };
 
 export default function RootLayout({
@@ -28,4 +28,3 @@ export default function RootLayout({
     </html>
   );
 }
-

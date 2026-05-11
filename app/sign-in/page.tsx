@@ -53,25 +53,25 @@ export default function SignInPage() {
                             <Shield className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <div className="text-white font-bold text-xl tracking-tight">Bandhan Vatika</div>
-                            <div className="text-blue-300 text-xs uppercase tracking-wider">Banquet Hall</div>
+                            <div className="text-white font-bold text-xl tracking-tight">Arkashri</div>
+                            <div className="text-blue-300 text-xs uppercase tracking-wider">AI Audit OS</div>
                         </div>
                     </div>
 
                     <h2 className="text-4xl font-black text-white leading-tight mb-4">
-                        Premium Event Space<br />
-                        <span className="text-blue-300">For Your Special Moments</span>
+                        Audit Automation<br />
+                        <span className="text-blue-300">For Modern CA Firms</span>
                     </h2>
                     <p className="text-blue-200 text-base leading-relaxed max-w-sm">
-                        Elegant, spacious, and perfectly managed banquet hall for weddings, events, and celebrations.
+                        Convert raw client data into audit-ready evidence, risks, controls, working papers and reports.
                     </p>
                 </div>
 
                 <div className="relative space-y-4">
                     {[
-                        { label: 'Weddings', detail: 'Grand spaces for your big day' },
-                        { label: 'Events', detail: 'Corporate and personal gatherings' },
-                        { label: 'Celebrations', detail: 'Memories to last a lifetime' },
+                        { label: 'Data Refinery', detail: 'CSV, Excel and bank statement intake' },
+                        { label: 'Audit Agents', detail: 'Risk, GST, fraud and control workflows' },
+                        { label: 'Evidence Trail', detail: 'Review-ready records and sign-off history' },
                     ].map((item) => (
                         <div key={item.label} className="flex items-center gap-3">
                             <div className="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0" />
@@ -90,7 +90,7 @@ export default function SignInPage() {
                     {/* Mobile logo */}
                     <div className="lg:hidden flex items-center gap-3 mb-10 justify-center">
                         <Shield className="w-8 h-8 text-[#002776]" />
-                        <span className="text-xl font-black text-[#002776]">Bandhan Vatika</span>
+                        <span className="text-xl font-black text-[#002776]">Arkashri</span>
                     </div>
 
                     <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
@@ -163,7 +163,7 @@ export default function SignInPage() {
                                     className="mt-1 w-4 h-4 rounded border-gray-300 text-[#002776] focus:ring-[#002776] cursor-pointer shrink-0"
                                 />
                                 <label htmlFor="tos" className="text-xs text-gray-600 leading-relaxed cursor-pointer">
-                                    I acknowledge and agree to the <Link href="/terms" className="text-[#002776] hover:underline font-semibold">Terms of Service</Link> for accessing the Bandhan Vatika portal.
+                                    I acknowledge and agree to the <Link href="/terms" className="text-[#002776] hover:underline font-semibold">Terms of Service</Link> for accessing the Arkashri workspace.
                                 </label>
                             </div>
 
@@ -181,7 +181,7 @@ export default function SignInPage() {
 
                         <div className="mt-6 pt-6 border-t border-gray-100">
                             <p className="text-center text-sm text-gray-500">
-                                New to Bandhan Vatika?{' '}
+                                New to Arkashri?{' '}
                                 <Link href="/register" className="text-[#002776] font-semibold hover:underline">
                                     Create an account
                                 </Link>
