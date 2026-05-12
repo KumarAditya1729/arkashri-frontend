@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, use, useEffect } from 'react'
-import { Calendar, Users, Target, ChevronRight, Plus, CheckCircle2, Clock, AlertCircle, FileText, Loader2, X } from 'lucide-react'
+import { Calendar, Users, ChevronRight, Plus, CheckCircle2, Clock, AlertCircle, FileText, Loader2, X } from 'lucide-react'
 import { listPhases, createPhase, listTeamMembers, addTeamMember, PhaseOut, TeamMemberOut, PhaseCreate, TeamMemberCreate } from '@/lib/api'
 
 const PHASE_STATUS_CONFIG = {
@@ -98,7 +98,7 @@ export default function PlanningPage({ params }: { params: Promise<{ id: string 
             setShowPhaseModal(false)
             setPhaseForm({ name: '', status: 'UPCOMING', owner: '', progress: 0 })
         } catch (err: unknown) {
-            setPhaseError((err as { message?: string })?.message ?? 'Failed to create phase')
+            setPhaseError(err instanceof Error ? err.message : 'Failed to create phase')
         } finally {
             setSavingPhase(false)
         }
@@ -116,7 +116,7 @@ export default function PlanningPage({ params }: { params: Promise<{ id: string 
             setShowTeamModal(false)
             setMemberForm({ name: '', role: CA_ROLES[0] })
         } catch (err: unknown) {
-            setMemberError((err as { message?: string })?.message ?? 'Failed to add team member')
+            setMemberError(err instanceof Error ? err.message : 'Failed to add team member')
         } finally {
             setSavingMember(false)
         }

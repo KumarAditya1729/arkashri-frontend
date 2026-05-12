@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import {
     Plus, CheckCircle2, XCircle, Clock, Shield, AlertTriangle, Loader2, X
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import {
     getEngagements, EngagementResponse,
     listControls, createControl, updateControlStatus,
@@ -22,7 +23,7 @@ const statusMap: Record<ControlStatus, DisplayStatus> = {
     COMPENSATING: 'Compensating',
 }
 
-const statusConfig: Record<DisplayStatus, { icon: any; color: string; bg: string; api: ControlStatus }> = {
+const statusConfig: Record<DisplayStatus, { icon: LucideIcon; color: string; bg: string; api: ControlStatus }> = {
     Effective:    { icon: CheckCircle2,   color: 'text-green-700',  bg: 'bg-green-50 border-green-200',   api: 'EFFECTIVE' },
     Deficient:    { icon: XCircle,        color: 'text-red-700',    bg: 'bg-red-50 border-red-200',       api: 'DEFICIENT' },
     'Not Tested': { icon: Clock,          color: 'text-gray-500',   bg: 'bg-gray-50 border-gray-200',     api: 'NOT_TESTED' },
@@ -91,8 +92,8 @@ export default function ControlsPage() {
             setControls(updated)
             setShowAdd(false)
             setForm({ title: '', area: '', control_type: 'PREVENTIVE', frequency: 'Monthly', owner: '' })
-        } catch (err: any) {
-            setAddError(err?.message ?? 'Failed to create control')
+        } catch (err: unknown) {
+            setAddError(err instanceof Error ? err.message : 'Failed to create control')
         } finally {
             setAdding(false)
         }

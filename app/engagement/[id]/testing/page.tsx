@@ -2,6 +2,7 @@
 
 import { useState, use } from 'react'
 import { Plus, CheckCircle2, XCircle, Clock, FlaskConical, ChevronRight } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 type TestStatus = 'Pass' | 'Fail' | 'In Progress' | 'Pending'
 
@@ -19,7 +20,7 @@ interface TestProcedure {
 
 const TESTS: TestProcedure[] = []
 
-const statusConfig: Record<TestStatus, { icon: any, color: string, bg: string }> = {
+const statusConfig: Record<TestStatus, { icon: LucideIcon, color: string, bg: string }> = {
     Pass: { icon: CheckCircle2, color: 'text-green-700', bg: 'bg-green-100' },
     Fail: { icon: XCircle, color: 'text-red-700', bg: 'bg-red-100' },
     'In Progress': { icon: Clock, color: 'text-blue-700', bg: 'bg-blue-100' },

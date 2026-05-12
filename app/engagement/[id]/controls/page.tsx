@@ -2,6 +2,7 @@
 
 import { useState, use } from 'react'
 import { Plus, CheckCircle2, XCircle, Clock, ChevronRight, Shield, AlertTriangle } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 
 type ControlStatus = 'Effective' | 'Deficient' | 'Not Tested' | 'Compensating'
 type ControlType = 'Preventive' | 'Detective' | 'Corrective'
@@ -20,7 +21,7 @@ interface Control {
 
 const CONTROLS: Control[] = []
 
-const statusConfig: Record<ControlStatus, { icon: any, color: string, bg: string }> = {
+const statusConfig: Record<ControlStatus, { icon: LucideIcon, color: string, bg: string }> = {
     Effective: { icon: CheckCircle2, color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
     Deficient: { icon: XCircle, color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
     'Not Tested': { icon: Clock, color: 'text-gray-500', bg: 'bg-gray-50 border-gray-200' },

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, use } from 'react'
 import { Eye, CheckCircle2, XCircle, MessageSquare, Clock, ChevronDown, ChevronUp, Send, Loader2 } from 'lucide-react'
-import { getApprovals, actionApproval, getApiErrorMessage } from '@/lib/api'
+import type { LucideIcon } from 'lucide-react'
+import { getApprovals, actionApproval, getApiErrorMessage, type ApprovalAction, type ApprovalResponse, type AuditRunOut } from '@/lib/api'
 
 type ReviewStatus = 'Approved' | 'Changes Required' | 'Pending' | 'In Review'
 
@@ -19,7 +20,7 @@ interface ReviewItem {
 
 const EMPTY_REVIEW_ITEMS: ReviewItem[] = []
 
-const statusConfig: Record<ReviewStatus, { icon: any; color: string; bg: string }> = {
+const statusConfig: Record<ReviewStatus, { icon: LucideIcon; color: string; bg: string }> = {
     Approved: { icon: CheckCircle2, color: 'text-green-700', bg: 'bg-green-100' },
     'Changes Required': { icon: XCircle, color: 'text-red-700', bg: 'bg-red-100' },
     'In Review': { icon: Eye, color: 'text-blue-700', bg: 'bg-blue-100' },
@@ -53,11 +54,12 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
                     import('@/lib/api').then(m => m.listAuditRuns(id).catch(() => []))
                 ])
                 if (cancelled) return
-                const runIds = new Set(runs.map((r: any) => r.id))
-                const engagementApprovals = data.filter((a: any) => a.payload?.run_id && runIds.has(a.payload.run_id))
+                const runIds = new Set((runs as AuditRunOut[]).map(r => r.id))
+                type EngagementApproval = ApprovalResponse & { payload?: { run_id?: string } }
+                const engagementApprovals = (data as EngagementApproval[]).filter(a => a.payload?.run_id && runIds.has(a.payload.run_id))
 
                 if (engagementApprovals.length > 0) {
-                    const mapped: ReviewItem[] = engagementApprovals.map((a: any, i: number) => ({
+                    const mapped: ReviewItem[] = engagementApprovals.map((a, i) => ({
                         id: a.id.slice(0, 8).toUpperCase(),
                         section: a.reference_type || `Workpaper ${i + 1}`,
                         description: a.reason || 'Approval request',
@@ -65,7 +67,7 @@ export default function ReviewPage({ params }: { params: Promise<{ id: string }>
                         reviewedBy: 'Senior Auditor',
                         status: approvalStatusToReview(a.status),
                         backendId: a.id,
-                        comments: (a.actions || []).filter((ac: any) => ac.action_type === 'COMMENTED').map((ac: any) => ({
+                        comments: (a.actions || []).filter((ac: ApprovalAction) => ac.action_type === 'COMMENTED').map((ac: ApprovalAction) => ({
                             author: ac.actor_id,
                             text: ac.notes ?? '',
                             time: new Date(ac.created_at).toLocaleString(),

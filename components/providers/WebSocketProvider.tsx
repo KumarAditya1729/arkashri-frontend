@@ -6,7 +6,7 @@ import { apiFetch } from '@/lib/api'
 
 interface WebSocketContextType {
     isConnected: boolean
-    lastEvent: any | null
+    lastEvent: unknown | null
 }
 
 const WebSocketContext = createContext<WebSocketContextType | undefined>(undefined)
@@ -16,7 +16,7 @@ const BACKOFF_MAX_MS = 30000
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     const [isConnected, setIsConnected] = useState(false)
-    const [lastEvent, setLastEvent] = useState<any | null>(null)
+    const [lastEvent, setLastEvent] = useState<unknown | null>(null)
     const socketRef = useRef<WebSocket | null>(null)
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
     const connectWsRef = useRef<((auth: boolean) => void) | null>(null)

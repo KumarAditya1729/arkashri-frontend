@@ -9,7 +9,7 @@ import {
 import {
     getEngagements, EngagementResponse,
     listPhases, createPhase, PhaseOut, PhaseCreate,
-    listTeamMembers, addTeamMember, TeamMemberOut, TeamMemberCreate,
+    listTeamMembers, addTeamMember, TeamMemberOut, type PhaseStatus,
     getApiErrorMessage,
 } from '@/lib/api'
 
@@ -100,8 +100,6 @@ export default function PlanningPage() {
         })
     }, [selectedId])
 
-    const currentEngagement = engagements.find(e => e.id === selectedId)
-
     const handleBootstrapPhases = async () => {
         if (!selectedId) return
         setBootstrapping(true)
@@ -124,8 +122,8 @@ export default function PlanningPage() {
             setPhases(updated)
             setShowPhaseModal(false)
             setPhaseForm({ name: '', status: 'UPCOMING', owner: '', progress: 0 })
-        } catch (err: any) {
-            setPhaseError(err?.message ?? 'Failed to create phase')
+        } catch (err: unknown) {
+            setPhaseError(err instanceof Error ? err.message : 'Failed to create phase')
         } finally {
             setCreatingPhase(false)
         }
@@ -144,14 +142,13 @@ export default function PlanningPage() {
             setTeam(updated)
             setShowTeamModal(false)
             setMemberForm({ name: '', role: CA_ROLES[0] })
-        } catch (err: any) {
-            setMemberError(err?.message ?? 'Failed to add team member')
+        } catch (err: unknown) {
+            setMemberError(err instanceof Error ? err.message : 'Failed to add team member')
         } finally {
             setCreatingMember(false)
         }
     }
 
-    const completedPhases = phases.filter(p => p.status === 'COMPLETED').length
     const overallProgress = phases.length > 0 ? Math.round((phases.reduce((sum, p) => sum + (p.progress ?? 0), 0)) / phases.length) : 0
 
     return (
@@ -361,7 +358,7 @@ export default function PlanningPage() {
                             {team.length === 0 && (
                                 <div className="col-span-2 text-center py-10 text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">
                                     <Users className="w-8 h-8 mx-auto mb-2 opacity-30" />
-                                    <p className="font-medium text-sm">No team members assigned yet. Click "Add Member" to get started.</p>
+                                    <p className="font-medium text-sm">No team members assigned yet. Click &quot;Add Member&quot; to get started.</p>
                                 </div>
                             )}
                             <button
@@ -402,7 +399,7 @@ export default function PlanningPage() {
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">Status</label>
-                                <select value={phaseForm.status} onChange={e => setPhaseForm(f => ({ ...f, status: e.target.value as any }))}
+                                <select value={phaseForm.status} onChange={e => setPhaseForm(f => ({ ...f, status: e.target.value as PhaseStatus }))}
                                     className="w-full h-10 px-3 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#002776]/30">
                                     <option value="UPCOMING">Upcoming</option>
                                     <option value="IN_PROGRESS">In Progress</option>

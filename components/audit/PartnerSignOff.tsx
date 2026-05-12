@@ -16,9 +16,9 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import {
-    ShieldCheck, Users, CheckCircle2, XCircle, AlertTriangle,
+    ShieldCheck, Users, CheckCircle2, AlertTriangle,
     Lock, Unlock, ChevronDown, ChevronUp, Eye, Fingerprint,
-    FileCheck, Scale, AlertCircle, RefreshCcw, Trash2
+    AlertCircle, RefreshCcw, Trash2
 } from 'lucide-react'
 import {
     SealSessionOut, PreSignSummary, SealSignatureOut, PartnerRole,
@@ -46,14 +46,6 @@ const ROLE_LABELS: Record<PartnerRole, string> = {
     [PartnerRole.REGULATORY_COSIGN]: 'Regulatory Co-Sign',
 }
 
-const OPINION_COLORS: Record<string, string> = {
-    UNMODIFIED: 'text-emerald-400',
-    QUALIFIED: 'text-amber-400',
-    ADVERSE: 'text-red-400',
-    DISCLAIMER: 'text-slate-400',
-    NONE: 'text-slate-500',
-}
-
 const OPINION_ICONS: Record<string, string> = {
     UNMODIFIED: '🟢',
     QUALIFIED: '🟡',
@@ -65,11 +57,10 @@ const OPINION_ICONS: Record<string, string> = {
 // ─── Signature Avatar ─────────────────────────────────────────────────────────
 
 function SignatureSlot({
-    sig, index, required, onWithdraw
+    sig, index, onWithdraw
 }: {
     sig?: SealSignatureOut
     index: number
-    required: number
     onWithdraw?: (sigId: string) => void
 }) {
     const isSigned = !!sig && !sig.withdrawn_at
@@ -358,7 +349,6 @@ export default function PartnerSignOff({
                                         <SignatureSlot
                                             key={i}
                                             index={i}
-                                            required={session.required_signatures}
                                             sig={session.signatures.filter(s => !s.withdrawn_at)[i]}
                                             onWithdraw={
                                                 session.signatures.filter(s => !s.withdrawn_at)[i]?.partner_user_id === currentUserId

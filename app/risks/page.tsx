@@ -57,14 +57,26 @@ export default function RisksPage() {
 
     useEffect(() => {
         if (!selectedId) return
-        setLoading(true)
-        getRisks(selectedId).then(data => {
-            setRisks(data)
-            setError(null)
-        }).catch(err => {
-            setRisks([])
-            setError(getApiErrorMessage(err, 'Unable to load risks from the backend.'))
-        }).finally(() => setLoading(false))
+        let cancelled = false
+        const loadRisks = async () => {
+            setLoading(true)
+            try {
+                const data = await getRisks(selectedId)
+                if (!cancelled) {
+                    setRisks(data)
+                    setError(null)
+                }
+            } catch (err) {
+                if (!cancelled) {
+                    setRisks([])
+                    setError(getApiErrorMessage(err, 'Unable to load risks from the backend.'))
+                }
+            } finally {
+                if (!cancelled) setLoading(false)
+            }
+        }
+        void loadRisks()
+        return () => { cancelled = true }
     }, [selectedId])
 
     const filtered = filter === 'All' ? risks : risks.filter(r => r.risk_status === filter)
@@ -198,7 +210,7 @@ export default function RisksPage() {
             {risks.length === 0 && !loading ? (
                 <div className="text-center py-14 text-gray-400 bg-white rounded-xl border border-dashed border-gray-200">
                     <ShieldAlert className="w-9 h-9 mx-auto mb-3 opacity-30" />
-                    <p className="font-semibold text-gray-500 mb-3">No risks identified yet. Click "Add Risk" to start your risk assessment.</p>
+                <p className="font-semibold text-gray-500 mb-3">No risks identified yet. Click &quot;Add Risk&quot; to start your risk assessment.</p>
                 </div>
             ) : (
                 <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">

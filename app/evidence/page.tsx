@@ -3,14 +3,15 @@
 import { AuditShell } from '@/components/layout/AuditShell'
 import { useState, useEffect, useRef } from 'react'
 import { Upload, Link as LinkIcon, FileText, Image, Trash2, Plus, CheckCircle2, Clock, Loader2, ShieldCheck } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { listEvidence, uploadEvidence, deleteEvidence, anchorMultiChainEvidence, EvidenceResponse, getApiErrorMessage } from '@/lib/api'
 import { ENGAGEMENT_REGISTRY } from '@/lib/engagementRegistry'
 
 const getActiveEngagementUuid = () => ENGAGEMENT_REGISTRY[0]?.uuid ?? null
 
-const typeIcon: Record<string, any> = { Document: FileText, Screenshot: Image, Confirmation: CheckCircle2, Workpaper: FileText, 'External Link': LinkIcon }
+const typeIcon: Record<string, LucideIcon> = { Document: FileText, Screenshot: Image, Confirmation: CheckCircle2, Workpaper: FileText, 'External Link': LinkIcon }
 const typeColor: Record<string, string> = { Document: 'text-blue-600 bg-blue-50', Screenshot: 'text-purple-600 bg-purple-50', Confirmation: 'text-green-600 bg-green-50', Workpaper: 'text-orange-600 bg-orange-50', 'External Link': 'text-gray-600 bg-gray-50' }
-const statusConfig: Record<string, { color: string; icon: any }> = {
+const statusConfig: Record<string, { color: string; icon: LucideIcon }> = {
     Reviewed: { color: 'text-green-700 bg-green-100', icon: CheckCircle2 },
     'Pending Review': { color: 'text-orange-700 bg-orange-100', icon: Clock },
     Rejected: { color: 'text-red-700 bg-red-100', icon: Trash2 },

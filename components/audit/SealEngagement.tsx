@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { sealEngagement, SealResponse, ApiError } from '@/lib/api'
-import { Lock, Loader2, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react'
+import { Lock, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 
 interface SealEngagementProps {
     engagementUuid: string
