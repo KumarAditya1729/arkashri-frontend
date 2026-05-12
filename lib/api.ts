@@ -508,10 +508,14 @@ export interface DataRefineryPreview {
     normalized_preview: Record<string, unknown>[]
     category_breakdown: Record<string, number>
     risk_flag_breakdown: Record<string, number>
+    quality_dimensions?: Record<string, unknown>
+    column_profiles?: Record<string, Record<string, unknown>>
+    cleaning_suggestions?: { type: string; title: string; action: string }[]
 }
 
 export interface ExcelRefinerySheetPreview {
     sheet_name: string
+    header_row_number?: number
     headers: string[]
     total_rows: number
     audit_ready_rows: number
@@ -522,6 +526,9 @@ export interface ExcelRefinerySheetPreview {
     suggested_mapping?: Record<string, string>
     category_breakdown?: Record<string, number>
     risk_flag_breakdown?: Record<string, number>
+    quality_dimensions?: Record<string, unknown>
+    column_profiles?: Record<string, Record<string, unknown>>
+    cleaning_suggestions?: { type: string; title: string; action: string }[]
 }
 
 export interface ExcelRefineryPreview {

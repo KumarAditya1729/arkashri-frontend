@@ -160,6 +160,7 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
     const headers = csvPreview?.headers ?? []
     const topIssues = csvPreview?.issues.slice(0, 8) ?? []
     const rows = csvPreview?.normalized_preview.slice(0, 8) ?? []
+    const suggestions = csvPreview?.cleaning_suggestions ?? []
     const canIngestCsv = fileMode === 'csv' && !!csvPreview?.can_ingest
 
     return (
@@ -293,6 +294,7 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
                             </div>
 
                             <IssueList issues={topIssues} />
+                            <SuggestionList suggestions={suggestions} />
                             <PreviewTable rows={rows} />
                         </>
                     )}
@@ -307,10 +309,11 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
                                     <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-4 py-3">
                                         <div>
                                             <h2 className="text-sm font-bold text-gray-900">{sheet.sheet_name}</h2>
-                                            <p className="text-xs text-gray-500">{sheet.total_rows} rows · {sheet.audit_ready_rows} ready · score {sheet.readiness_score}</p>
+                                            <p className="text-xs text-gray-500">{sheet.total_rows} rows · {sheet.audit_ready_rows} ready · score {sheet.readiness_score} · header row {sheet.header_row_number ?? 1}</p>
                                         </div>
                                         <span className="rounded-full bg-gray-100 px-2 py-1 text-[10px] font-bold uppercase text-gray-600">{sheet.issues.length} issue(s)</span>
                                     </div>
+                                    <SuggestionList suggestions={sheet.cleaning_suggestions ?? []} compact />
                                     <PreviewTable rows={sheet.normalized_preview.slice(0, 6)} />
                                 </div>
                             ))}
@@ -330,6 +333,23 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
                     )}
                 </div>
             </section>
+        </div>
+    )
+}
+
+function SuggestionList({ suggestions, compact = false }: { suggestions: { type: string; title: string; action: string }[]; compact?: boolean }) {
+    if (suggestions.length === 0) return null
+    return (
+        <div className={`${compact ? 'border-b border-gray-100 px-4 py-3' : 'rounded-lg border border-blue-100 bg-white p-4 shadow-sm'}`}>
+            <h2 className="text-sm font-bold text-gray-900">Cleaning Suggestions</h2>
+            <div className="mt-2 grid gap-2 md:grid-cols-2">
+                {suggestions.map((suggestion, index) => (
+                    <div key={`${suggestion.title}-${index}`} className="rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-xs">
+                        <div className="font-bold text-blue-950">{suggestion.title}</div>
+                        <p className="mt-1 text-blue-800">{suggestion.action}</p>
+                    </div>
+                ))}
+            </div>
         </div>
     )
 }
