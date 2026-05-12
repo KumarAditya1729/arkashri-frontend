@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node .next/standalone/server.js",
     "lint": "eslint",
     "smoke": "node scripts/smoke.mjs",
     "smoke:prod": "SMOKE_BASE_URL=https://arkashri-frontend-production.up.railway.app node scripts/smoke.mjs",

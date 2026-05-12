@@ -1,4 +1,5 @@
-# Frontend Dockerfile — Next.js 16 + React 19
+# Local Dockerfile for manual container testing.
+# Railway should use Railpack via railway.json instead of this file.
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
