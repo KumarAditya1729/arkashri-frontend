@@ -8,10 +8,10 @@ import type { UserRole } from '../../store/authStore'
 import { Eye, EyeOff, Shield, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 const ROLES = [
-    { value: 'admin', label: 'Platform Administrator' },
     { value: 'auditor', label: 'Auditor' },
     { value: 'reviewer', label: 'Reviewer' },
-    { value: 'operator', label: 'Audit Manager' },
+    { value: 'ca', label: 'Chartered Accountant' },
+    { value: 'read_only', label: 'Read Only Reviewer' },
 ] as const
 
 function PasswordStrength({ password }: { password: string }) {

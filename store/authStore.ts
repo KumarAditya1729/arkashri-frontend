@@ -4,7 +4,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { signIn as apiSignIn, clearAuth, verifySession } from '@/lib/api'
 
-export type UserRole = 'admin' | 'operator' | 'reviewer' | 'auditor'
+export type UserRole = 'admin' | 'operator' | 'reviewer' | 'auditor' | 'read_only'
 
 export interface AuthUser {
     id: string
