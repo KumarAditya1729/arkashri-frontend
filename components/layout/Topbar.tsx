@@ -19,52 +19,52 @@ export function Topbar() {
     }
 
     return (
-        <header className="h-14 border-b border-[#001a54] bg-[#002776] text-white flex items-center justify-between px-4 sm:px-6 sticky top-0 z-50">
+        <header className="h-14 border-b border-slate-200 bg-white text-slate-900 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-50">
             <div className="flex items-center gap-4">
                 <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/10">
-                        <Shield className="h-5 w-5 text-white" />
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-blue-100 bg-[#eef5ff]">
+                        <Shield className="h-5 w-5 text-[#002776]" />
                     </span>
                     <div className="flex flex-col">
                         <h1 className="font-bold tracking-tight text-lg leading-tight">Arkashri</h1>
-                        <span className="text-[10px] text-blue-200 tracking-wider uppercase">AI Audit OS</span>
+                        <span className="text-[10px] text-slate-500 tracking-wider uppercase">AI Audit OS</span>
                     </div>
                 </Link>
             </div>
 
             <div className="mx-4 hidden max-w-md flex-1 md:block lg:mx-8 relative">
-                <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                 <Input
                     placeholder="Global Search (Entities, Risks, Evidence)..."
-                    className="h-9 pl-9 bg-white/10 border-white/20 text-white placeholder:text-gray-300 focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-white"
+                    className="h-9 pl-9 bg-slate-50 border-slate-200 text-slate-900 placeholder:text-slate-400 focus-visible:ring-offset-0 focus-visible:ring-1 focus-visible:ring-[#002776]"
                 />
             </div>
 
             <div className="flex items-center gap-2">
                 <Link href="/engagement-overview" className="hidden lg:inline-flex">
-                    <Button size="sm" className="h-9 bg-white text-[#002776] hover:bg-blue-50 text-xs font-bold">
+                    <Button size="sm" className="h-9 bg-[#002776] text-white hover:bg-[#001a54] text-xs font-bold">
                         <Plus className="mr-1.5 h-3.5 w-3.5" />
                         New Engagement
                     </Button>
                 </Link>
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white" onClick={() => console.log('Notification clicked')}>
+                <Button variant="ghost" size="icon" className="text-slate-500 hover:bg-slate-100 hover:text-slate-900" onClick={() => console.log('Notification clicked')}>
                     <Bell className="w-5 h-5" />
                 </Button>
 
                 {user ? (
-                    <div className="relative ml-4 pl-4 border-l border-white/20">
+                    <div className="relative ml-4 pl-4 border-l border-slate-200">
                         <button
                             onClick={() => setShowUserMenu(!showUserMenu)}
-                            className="flex items-center gap-2 hover:bg-white/10 rounded-lg px-2 py-1 transition-colors"
+                            className="flex items-center gap-2 hover:bg-slate-100 rounded-lg px-2 py-1 transition-colors"
                         >
-                            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center text-sm font-bold border border-white/30">
+                            <div className="w-8 h-8 bg-[#eef5ff] text-[#002776] rounded-full flex items-center justify-center text-sm font-bold border border-blue-100">
                                 {user.avatarInitials}
                             </div>
                             <div className="text-right hidden sm:block">
                                 <div className="text-sm font-semibold leading-tight">{user.fullName}</div>
-                                <div className="text-xs text-blue-200 capitalize">{user.role}</div>
+                                <div className="text-xs text-slate-500 capitalize">{user.role}</div>
                             </div>
-                            <ChevronDown className="w-3.5 h-3.5 text-blue-200" />
+                            <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                         </button>
 
                         {showUserMenu && (
@@ -85,14 +85,14 @@ export function Topbar() {
                         )}
                     </div>
                 ) : (
-                    <div className="ml-4 pl-4 border-l border-white/20 flex gap-2">
+                    <div className="ml-4 pl-4 border-l border-slate-200 flex gap-2">
                         <Link href="/sign-in">
-                            <Button variant="ghost" size="sm" className="text-white hover:bg-white/10 hover:text-white text-xs">
+                            <Button variant="ghost" size="sm" className="text-slate-700 hover:bg-slate-100 text-xs">
                                 Sign In
                             </Button>
                         </Link>
                         <Link href="/register">
-                            <Button size="sm" className="bg-white text-[#002776] hover:bg-blue-50 text-xs font-semibold">
+                            <Button size="sm" className="bg-[#002776] text-white hover:bg-[#001a54] text-xs font-semibold">
                                 Register
                             </Button>
                         </Link>

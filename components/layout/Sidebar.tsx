@@ -41,14 +41,14 @@ export function Sidebar() {
     const pathname = usePathname()
 
     return (
-        <aside className="hidden w-64 border-r border-slate-200 bg-white md:flex flex-col h-[calc(100vh-3.5rem)] sticky top-14 overflow-hidden">
+        <aside className="hidden w-60 border-r border-slate-200 bg-white md:flex flex-col h-[calc(100vh-3.5rem)] sticky top-14 overflow-hidden">
             <div className="p-4 border-b border-slate-100">
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Workspace Navigation</div>
+                <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Workspace</div>
             </div>
-            <nav className="flex-1 overflow-y-auto p-3 space-y-4">
+            <nav className="flex-1 overflow-y-auto p-3 space-y-5">
                 {navSections.map(section => (
                     <div key={section.label}>
-                        <div className="mb-1 px-3 text-[10px] font-black uppercase tracking-widest text-gray-400">{section.label}</div>
+                        <div className="mb-2 px-3 text-[10px] font-black uppercase tracking-widest text-slate-400">{section.label}</div>
                         <div className="space-y-1">
                             {section.items.map((item) => {
                                 const Icon = item.icon
@@ -57,7 +57,7 @@ export function Sidebar() {
                                     <Link
                                         key={item.href}
                                         href={item.href}
-                                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive ? 'bg-[#e5f6ff] text-[#002776] shadow-sm ring-1 ring-blue-100' : 'text-gray-700 hover:bg-slate-100 hover:text-gray-900'
+                                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${isActive ? 'bg-[#eef5ff] text-[#002776] ring-1 ring-blue-100' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
                                             }`}
                                     >
                                         <Icon className={`w-4 h-4 ${isActive ? 'text-[#002776]' : 'text-gray-500'}`} />
