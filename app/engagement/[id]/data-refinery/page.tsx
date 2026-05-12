@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef, use } from 'react'
-import { AlertTriangle, CheckCircle2, DatabaseZap, FileSpreadsheet, FileText, Loader2, ScanText, Upload } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, DatabaseZap, FileSpreadsheet, FileText, Loader2, ScanText, Upload, Wand2 } from 'lucide-react'
+import { AlertBanner, LoadingPanel, MetricCard, PageHeader, SectionCard, StatusPill } from '@/components/ui/enterprise'
 
 import {
     DataRefineryPreview,
@@ -165,31 +166,36 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <div className="flex items-center gap-2">
-                        <DatabaseZap className="h-5 w-5 text-[#002776]" />
-                        <h1 className="text-xl font-bold text-[#002776] tracking-tight">Audit Data Refinery</h1>
-                    </div>
-                    <p className="mt-1 text-xs text-gray-500">Convert CSV, Excel and PDF bank statement data into audit-ready review outputs.</p>
-                </div>
-                <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-2 rounded-lg bg-[#002776] px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#001a54]"
-                >
-                    <Upload className="h-4 w-4" /> Upload File
-                </button>
-                <input ref={fileInputRef} type="file" accept=".csv,text/csv,.xlsx,.xls,.pdf,application/pdf" className="hidden" onChange={event => handleFile(event.target.files?.[0])} />
-            </div>
+            <PageHeader
+                icon={DatabaseZap}
+                title="Audit Data Refinery"
+                description="Convert messy CSV, Excel and bank statement files into audit-ready rows with mapping, scoring, quality issues and CA review gates."
+                meta={
+                    <>
+                        <StatusPill tone={file ? 'green' : 'amber'}>{file ? fileMode.toUpperCase() : 'No file selected'}</StatusPill>
+                        <StatusPill tone="blue">100 MB intake limit</StatusPill>
+                    </>
+                }
+                actions={
+                    <>
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="inline-flex items-center gap-2 rounded-lg bg-[#002776] px-4 py-2 text-xs font-bold text-white shadow-sm hover:bg-[#001a54]"
+                        >
+                            <Upload className="h-4 w-4" /> Upload File
+                        </button>
+                        <input ref={fileInputRef} type="file" accept=".csv,text/csv,.xlsx,.xls,.pdf,application/pdf" className="hidden" onChange={event => handleFile(event.target.files?.[0])} />
+                    </>
+                }
+            />
 
             {(error || message) && (
-                <div className={`rounded-lg border px-3 py-2 text-xs ${error ? 'border-red-200 bg-red-50 text-red-700' : 'border-green-200 bg-green-50 text-green-700'}`}>
-                    {error ?? message}
-                </div>
+                <AlertBanner tone={error ? 'red' : 'green'}>{error ?? message}</AlertBanner>
             )}
 
             <section className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-                <div className="space-y-4 rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+                <SectionCard title="Intake Controls" description="Choose source type, inspect readiness, then ingest only approved CSV rows." icon={Wand2}>
+                <div className="space-y-4 p-4">
                     <div>
                         <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Source type</label>
                         <select
@@ -210,11 +216,11 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
 
                     {csvPreview && (
                         <>
-                            <div className="grid grid-cols-2 gap-2 text-center">
-                                <Metric label="Rows" value={csvPreview.total_rows} />
-                                <Metric label="Ready" value={csvPreview.audit_ready_rows} />
-                                <Metric label="Score" value={csvPreview.readiness_score} />
-                                <Metric label="Issues" value={csvPreview.issues.length} />
+                            <div className="grid grid-cols-2 gap-2">
+                                <MetricCard label="Rows" value={csvPreview.total_rows} />
+                                <MetricCard label="Ready" value={csvPreview.audit_ready_rows} tone="green" />
+                                <MetricCard label="Score" value={csvPreview.readiness_score} />
+                                <MetricCard label="Issues" value={csvPreview.issues.length} tone="amber" />
                             </div>
                             <HashBox hash={csvPreview.source_file_hash} />
                         </>
@@ -222,11 +228,11 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
 
                     {excelPreview && (
                         <>
-                            <div className="grid grid-cols-2 gap-2 text-center">
-                                <Metric label="Sheets" value={excelPreview.sheet_count} />
-                                <Metric label="Rows" value={excelPreview.total_rows} />
-                                <Metric label="Ready" value={excelPreview.audit_ready_rows} />
-                                <Metric label="Score" value={excelPreview.readiness_score} />
+                            <div className="grid grid-cols-2 gap-2">
+                                <MetricCard label="Sheets" value={excelPreview.sheet_count} />
+                                <MetricCard label="Rows" value={excelPreview.total_rows} />
+                                <MetricCard label="Ready" value={excelPreview.audit_ready_rows} tone="green" />
+                                <MetricCard label="Score" value={excelPreview.readiness_score} />
                             </div>
                             <HashBox hash={excelPreview.source_file_hash} />
                         </>
@@ -234,11 +240,11 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
 
                     {pdfPreview && (
                         <>
-                            <div className="grid grid-cols-2 gap-2 text-center">
-                                <Metric label="Status" value={pdfPreview.status} />
-                                <Metric label="OCR" value={pdfPreview.ocr_provider ?? 'Pending'} />
-                                <Metric label="Review" value={pdfPreview.human_review_required ? 'Yes' : 'No'} />
-                                <Metric label="Ingest" value={pdfPreview.can_ingest ? 'Ready' : 'Gate'} />
+                            <div className="grid grid-cols-2 gap-2">
+                                <MetricCard label="Status" value={pdfPreview.status} />
+                                <MetricCard label="OCR" value={pdfPreview.ocr_provider ?? 'Pending'} />
+                                <MetricCard label="Review" value={pdfPreview.human_review_required ? 'Yes' : 'No'} tone="amber" />
+                                <MetricCard label="Ingest" value={pdfPreview.can_ingest ? 'Ready' : 'Gate'} tone={pdfPreview.can_ingest ? 'green' : 'amber'} />
                             </div>
                             <HashBox hash={pdfPreview.source_file_hash} />
                         </>
@@ -264,12 +270,11 @@ export default function DataRefineryPage({ params }: { params: Promise<{ id: str
                         </button>
                     )}
                 </div>
+                </SectionCard>
 
                 <div className="space-y-4">
                     {loading && (
-                        <div className="rounded-lg border border-gray-100 bg-white p-6 text-center text-sm text-gray-500">
-                            <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" /> Reading and classifying raw data...
-                        </div>
+                        <LoadingPanel label="Reading and classifying raw data" />
                     )}
 
                     {csvPreview && (
@@ -350,15 +355,6 @@ function SuggestionList({ suggestions, compact = false }: { suggestions: { type:
                     </div>
                 ))}
             </div>
-        </div>
-    )
-}
-
-function Metric({ label, value }: { label: string; value: number | string }) {
-    return (
-        <div className="rounded-lg border border-gray-100 bg-white p-3">
-            <div className="text-lg font-black text-gray-900 break-words">{value}</div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</div>
         </div>
     )
 }

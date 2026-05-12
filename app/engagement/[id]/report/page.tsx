@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, use, useEffect } from 'react'
-import { FileText, Download, CheckCircle2, AlertTriangle, Eye, Printer, ShieldCheck, PenTool, Loader2 } from 'lucide-react'
+import { FileText, Download, CheckCircle2, AlertTriangle, Eye, Printer, ShieldCheck, PenTool, Loader2, FileSignature } from 'lucide-react'
 import { getEngagement, EngagementResponse, getSealSession, createSealSession, signSealSession, SealSessionOut, PartnerRole } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
+import { MetricCard, PageHeader, SectionCard, StatusPill } from '@/components/ui/enterprise'
 
 interface Section {
     id: string
@@ -76,12 +77,18 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
 
     return (
         <>
-            <div className="mb-8 flex items-start justify-between">
-                <div>
-                    <h1 className="text-xl font-bold text-[#002776] tracking-tight">Phase 7: Audit Report</h1>
-                    <p className="text-gray-500 mt-1 text-xs text-balance">Draft, review and finalise the audit opinion and report for ENG-{id}.</p>
-                </div>
-                <div className="flex gap-2">
+            <PageHeader
+                icon={FileSignature}
+                title="Audit Report Studio"
+                description={`Draft, review, sign and export the audit opinion package for ENG-${id}.`}
+                meta={
+                    <>
+                        <StatusPill tone={sealSession?.status === 'FULLY_SIGNED' ? 'green' : 'amber'}>{sealSession?.status ?? 'Seal not initialized'}</StatusPill>
+                        <StatusPill tone="blue">{isJointSignatureRequired ? 'Joint signature required' : 'Single sign-off flow'}</StatusPill>
+                    </>
+                }
+                actions={
+                    <div className="flex gap-2">
                     <button 
                         onClick={() => {
                             const previewContent = Object.values(content).join('\n\n---\n\n')
@@ -144,26 +151,19 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                     >
                         <Download className="w-3.5 h-3.5" /> Export HTML
                     </button>
-                </div>
-            </div>
-
-            {/* Progress summary */}
-            <div className="grid grid-cols-3 gap-4 mb-6">
-                {[
-                    { label: 'Sections Complete', value: `${complete} / ${SECTIONS.length}` },
-                    { label: 'Total Word Count', value: totalWords.toLocaleString() },
-                    { label: 'Findings Documented', value: content.findings?.trim() ? '1' : '0' },
-                ].map(s => (
-                    <div key={s.label} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 text-center">
-                        <div className="text-2xl font-black text-gray-900">{s.value}</div>
-                        <div className="text-[10px] text-gray-500 mt-1 font-bold uppercase tracking-wider">{s.label}</div>
                     </div>
-                ))}
+                }
+            />
+
+            <div className="grid grid-cols-3 gap-4 mb-6">
+                <MetricCard label="Sections complete" value={`${complete} / ${SECTIONS.length}`} icon={CheckCircle2} tone="green" />
+                <MetricCard label="Total word count" value={totalWords.toLocaleString()} icon={FileText} />
+                <MetricCard label="Findings documented" value={content.findings?.trim() ? '1' : '0'} icon={AlertTriangle} tone="amber" />
             </div>
 
-            <div className="flex gap-5">
+            <div className="grid gap-5 xl:grid-cols-[14rem_minmax(0,1fr)_16rem]">
                 {/* Section nav */}
-                <div className="w-56 flex-shrink-0 space-y-2">
+                <div className="space-y-2">
                     {SECTIONS.map(s => {
                         const cfg = statusConfig[s.status as keyof typeof statusConfig]
                         const Icon = cfg.icon
@@ -184,7 +184,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 </div>
 
                 {/* Editor */}
-                <div className="flex-1 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+                <div className="min-h-[500px] overflow-hidden rounded-lg border border-gray-100 bg-white shadow-sm flex flex-col">
                     <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
                         <div>
                             <h2 className="font-black text-gray-900 text-xs uppercase tracking-widest">{activeSection.title}</h2>
@@ -202,8 +202,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                     {activeSection.status === 'pending' ? (
                         <div className="flex-1 flex items-center justify-center text-center p-12">
                             <div>
-                                <FileText className="w-10 h-10 text-gray-100 mx-auto mb-3" />
-                                <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">No live report content available</p>
+                                <FileText className="w-10 h-10 text-blue-100 mx-auto mb-3" />
+                                <p className="text-gray-700 text-xs font-bold uppercase tracking-widest">Report section waiting for source evidence</p>
                                 <p className="text-gray-400 text-[10px] mt-1 uppercase font-medium">Complete evidence, review and partner-approved drafting before editing this section.</p>
                             </div>
                         </div>
@@ -223,8 +223,8 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                 </div>
 
                 {isJointSignatureRequired && (
-                    <div className="w-64 flex-shrink-0 space-y-4">
-                        <div className="bg-[#002776] text-white p-4 rounded-xl shadow-lg border border-blue-900">
+                    <div className="space-y-4">
+                        <div className="bg-[#002776] text-white p-4 rounded-lg shadow-lg border border-blue-900">
                             <h3 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 mb-3">
                                 <ShieldCheck className="w-4 h-4 text-blue-300" />
                                 Joint Signature Protocol
@@ -288,7 +288,7 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                             )}
                         </div>
 
-                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl">
+                        <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
                             <h4 className="text-[9px] font-black text-amber-800 uppercase tracking-widest flex items-center gap-2 mb-2">
                                 <AlertTriangle className="w-3.5 h-3.5" />
                                 Governance Note
@@ -298,6 +298,14 @@ export default function ReportPage({ params }: { params: Promise<{ id: string }>
                             </p>
                         </div>
                     </div>
+                )}
+                {!isJointSignatureRequired && (
+                    <SectionCard title="Report Governance" description="Final report issuance requires evidence linkage, reviewer clearance and partner approval." icon={ShieldCheck}>
+                        <div className="space-y-3 p-4 text-xs text-slate-600">
+                            <div className="rounded-md bg-slate-50 p-3">Evidence and working-paper references should be complete before export.</div>
+                            <div className="rounded-md bg-slate-50 p-3">Partner sign-off will lock the report trail for audit history.</div>
+                        </div>
+                    </SectionCard>
                 )}
             </div>
         </>

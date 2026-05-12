@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Bell, Search, LogOut, ChevronDown, Shield } from 'lucide-react'
+import { Bell, Search, LogOut, ChevronDown, Shield, Plus } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '../../store/authStore'
@@ -19,7 +19,7 @@ export function Topbar() {
     }
 
     return (
-        <header className="h-14 border-b bg-[#002776] text-white flex items-center justify-between px-6 sticky top-0 z-50">
+        <header className="h-14 border-b border-[#001a54] bg-[#002776] text-white flex items-center justify-between px-4 sm:px-6 sticky top-0 z-50">
             <div className="flex items-center gap-4">
                 <Link href="/dashboard" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
                     <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/10">
@@ -32,7 +32,7 @@ export function Topbar() {
                 </Link>
             </div>
 
-            <div className="flex-1 max-w-md mx-8 relative">
+            <div className="mx-4 hidden max-w-md flex-1 md:block lg:mx-8 relative">
                 <Search className="w-4 h-4 absolute left-3 top-2.5 text-gray-400" />
                 <Input
                     placeholder="Global Search (Entities, Risks, Evidence)..."
@@ -41,6 +41,12 @@ export function Topbar() {
             </div>
 
             <div className="flex items-center gap-2">
+                <Link href="/engagement-overview" className="hidden lg:inline-flex">
+                    <Button size="sm" className="h-9 bg-white text-[#002776] hover:bg-blue-50 text-xs font-bold">
+                        <Plus className="mr-1.5 h-3.5 w-3.5" />
+                        New Engagement
+                    </Button>
+                </Link>
                 <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white" onClick={() => console.log('Notification clicked')}>
                     <Bell className="w-5 h-5" />
                 </Button>

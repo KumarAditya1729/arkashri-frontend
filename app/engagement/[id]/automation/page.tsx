@@ -2,6 +2,7 @@
 
 import { use, useEffect, useState } from 'react'
 import { AlertTriangle, BrainCircuit, CheckCircle2, FileCheck, Loader2, Play, ShieldCheck } from 'lucide-react'
+import { AlertBanner, EmptyState, LoadingPanel, MetricCard, PageHeader, SectionCard, StatusPill } from '@/components/ui/enterprise'
 
 import {
     AuditAutomationPack,
@@ -105,14 +106,18 @@ export default function AutomationPage({ params }: { params: Promise<{ id: strin
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                    <div className="flex items-center gap-2">
-                        <BrainCircuit className="h-5 w-5 text-[#002776]" />
-                        <h1 className="text-xl font-bold tracking-tight text-[#002776]">Big 4 Automation Engine</h1>
-                    </div>
-                    <p className="mt-1 text-xs text-gray-500">AI-assisted risk intelligence, working papers, controls and report readiness for this engagement.</p>
-                </div>
+            <PageHeader
+                icon={BrainCircuit}
+                title="Big 4 Automation Engine"
+                description="Run risk intelligence, sampling, agent checks, confirmations, management responses and working-paper outputs from one controlled surface."
+                meta={
+                    <>
+                        <StatusPill tone={pack ? 'green' : 'amber'}>{pack ? 'Pack loaded' : 'Awaiting pack'}</StatusPill>
+                        <StatusPill tone="blue">Human review required</StatusPill>
+                    </>
+                }
+                actions={
+                    <>
                 <button
                     onClick={runAutomation}
                     disabled={running || loading || !uuid}
@@ -121,6 +126,11 @@ export default function AutomationPage({ params }: { params: Promise<{ id: strin
                     {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
                     Run Automation Pack
                 </button>
+                    </>
+                }
+            />
+            <SectionCard title="Execution Actions" description="Each action writes structured audit output and keeps partner review in the loop." icon={ShieldCheck}>
+                <div className="flex flex-wrap gap-2 p-4">
                 <button
                     onClick={() => runAuxiliaryAction('confirmation')}
                     disabled={!!auxRunning || loading || !uuid}
@@ -143,11 +153,9 @@ export default function AutomationPage({ params }: { params: Promise<{ id: strin
                         className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50"
                     >
                         <FileCheck className="h-4 w-4" />
-                        Export Working Papers
+                    Export Working Papers
                     </a>
                 )}
-            </div>
-            <div className="flex flex-wrap gap-2">
                 <button
                     onClick={() => runAuxiliaryAction('sampling')}
                     disabled={!!auxRunning || loading || !uuid}
@@ -164,36 +172,36 @@ export default function AutomationPage({ params }: { params: Promise<{ id: strin
                     {auxRunning === 'agents' ? <Loader2 className="h-4 w-4 animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
                     Run Audit Agents
                 </button>
-            </div>
+                </div>
+            </SectionCard>
 
             {(error || message) && (
-                <div className={`rounded-lg border px-3 py-2 text-xs ${error ? 'border-red-200 bg-red-50 text-red-700' : 'border-green-200 bg-green-50 text-green-700'}`}>
-                    {error ?? message}
-                </div>
+                <AlertBanner tone={error ? 'red' : 'green'}>{error ?? message}</AlertBanner>
             )}
 
             {loading && (
-                <div className="rounded-lg border border-gray-100 bg-white p-8 text-center text-sm text-gray-500">
-                    <Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />
-                    Building automation snapshot...
-                </div>
+                <LoadingPanel label="Building automation snapshot" />
+            )}
+
+            {!pack && !loading && !error && (
+                <EmptyState
+                    icon={BrainCircuit}
+                    title="Automation pack is waiting for engagement data"
+                    description="Import transactions, upload evidence and run readiness checks before generating a deeper automation pack."
+                />
             )}
 
             {pack && !loading && (
                 <>
                     <section className="grid gap-3 md:grid-cols-4">
-                        <Metric label="Readiness" value={`${pack.report_readiness.score}%`} />
-                        <Metric label="Transactions" value={String(pack.risk_intelligence.transaction_count)} />
-                        <Metric label="Findings" value={String(pack.risk_intelligence.findings.length)} />
-                        <Metric label="Opinion" value={pack.report_readiness.suggested_opinion_type} />
+                        <MetricCard label="Readiness" value={`${pack.report_readiness.score}%`} icon={CheckCircle2} tone="green" />
+                        <MetricCard label="Transactions" value={String(pack.risk_intelligence.transaction_count)} icon={FileCheck} />
+                        <MetricCard label="Findings" value={String(pack.risk_intelligence.findings.length)} icon={AlertTriangle} tone="amber" />
+                        <MetricCard label="Opinion" value={pack.report_readiness.suggested_opinion_type} icon={ShieldCheck} tone="blue" />
                     </section>
 
                     <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-                        <div className="rounded-lg border border-gray-100 bg-white shadow-sm">
-                            <div className="flex items-center gap-2 border-b border-gray-100 px-4 py-3">
-                                <ShieldCheck className="h-4 w-4 text-[#002776]" />
-                                <h2 className="text-sm font-bold text-gray-900">Risk Intelligence</h2>
-                            </div>
+                        <SectionCard title="Risk Intelligence" icon={ShieldCheck}>
                             <div className="divide-y divide-gray-100">
                                 {findings.length === 0 ? (
                                     <div className="px-4 py-6 text-sm text-gray-500">No automated findings yet.</div>
@@ -207,13 +215,9 @@ export default function AutomationPage({ params }: { params: Promise<{ id: strin
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </SectionCard>
 
-                        <div className="rounded-lg border border-gray-100 bg-white shadow-sm">
-                            <div className="flex items-center gap-2 border-b border-gray-100 px-4 py-3">
-                                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                                <h2 className="text-sm font-bold text-gray-900">Report Gate</h2>
-                            </div>
+                        <SectionCard title="Report Gate" icon={AlertTriangle}>
                             <div className="space-y-2 p-4">
                                 {checks.map(check => (
                                     <div key={check.code} className="flex items-start gap-2 rounded-md bg-gray-50 p-2 text-xs">
@@ -225,14 +229,10 @@ export default function AutomationPage({ params }: { params: Promise<{ id: strin
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </SectionCard>
                     </section>
 
-                    <section className="rounded-lg border border-gray-100 bg-white shadow-sm">
-                        <div className="flex items-center gap-2 border-b border-gray-100 px-4 py-3">
-                            <FileCheck className="h-4 w-4 text-[#002776]" />
-                            <h2 className="text-sm font-bold text-gray-900">Working Paper Schedules</h2>
-                        </div>
+                    <SectionCard title="Working Paper Schedules" icon={FileCheck}>
                         <div className="overflow-x-auto">
                             <table className="min-w-full text-left text-xs">
                                 <thead className="bg-gray-50 text-[10px] uppercase tracking-widest text-gray-500">
@@ -257,18 +257,9 @@ export default function AutomationPage({ params }: { params: Promise<{ id: strin
                                 </tbody>
                             </table>
                         </div>
-                    </section>
+                    </SectionCard>
                 </>
             )}
-        </div>
-    )
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-    return (
-        <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
-            <div className="text-lg font-black text-gray-900">{value}</div>
-            <div className="mt-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</div>
         </div>
     )
 }
