@@ -212,20 +212,25 @@ export default function Dashboard() {
                     </section>
 
                     <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-                        <PanelHeader icon={LayoutList} title="Workflow Launchpad" subtitle="Start from the audit type, not from a module" action={<Link href="/engagement-overview" className="text-xs font-bold text-[#002776]">View all</Link>} />
+                        <PanelHeader
+                            icon={LayoutList}
+                            title="Audit Workflow Library"
+                            subtitle="Select the audit assignment and open its documents, checklist, testing, review and report path."
+                            action={<Link href="/engagement-overview" className="text-xs font-bold text-[#002776]">View all</Link>}
+                        />
                         <div className="divide-y divide-slate-100">
                             {launchpad.map(auditType => (
-                                <Link href="/engagement-overview" key={auditType.slug} className="grid gap-3 px-4 py-3 hover:bg-slate-50 md:grid-cols-[minmax(0,1fr)_14rem_5rem] md:items-center">
+                                <Link href="/engagement-overview" key={auditType.slug} className="grid gap-3 px-4 py-3 hover:bg-slate-50 md:grid-cols-[minmax(0,1fr)_15rem_7rem] md:items-center">
                                     <div className="min-w-0">
                                         <div className="font-black text-slate-950">{auditType.title}</div>
-                                        <p className="mt-1 line-clamp-1 text-xs text-slate-500">{auditType.shortDescription}</p>
+                                        <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{auditType.shortDescription}</p>
                                     </div>
                                     <div className="grid grid-cols-3 gap-1 text-center text-[10px] font-bold text-slate-500">
                                         <span className="rounded bg-slate-50 px-2 py-1">{auditType.requiredDocuments.length} docs</span>
                                         <span className="rounded bg-slate-50 px-2 py-1">{auditType.checklistItems.length} checks</span>
                                         <span className="rounded bg-slate-50 px-2 py-1">{auditType.timeline.length} stages</span>
                                     </div>
-                                    <span className="inline-flex items-center gap-1 text-xs font-black text-[#002776]">Start <ArrowRight className="h-3 w-3" /></span>
+                                    <span className="inline-flex items-center gap-1 text-xs font-black text-[#002776]">Open workflow <ArrowRight className="h-3 w-3" /></span>
                                 </Link>
                             ))}
                         </div>
