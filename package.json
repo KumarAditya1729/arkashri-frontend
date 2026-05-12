@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "node .next/standalone/server.js",
+    "start": "if [ -f .next/standalone/server.js ]; then node .next/standalone/server.js; elif [ -f server.js ]; then node server.js; else next start -H 0.0.0.0 -p ${PORT:-3000}; fi",
     "lint": "eslint",
     "smoke": "node scripts/smoke.mjs",
     "smoke:prod": "SMOKE_BASE_URL=https://arkashri-frontend-production.up.railway.app node scripts/smoke.mjs",
